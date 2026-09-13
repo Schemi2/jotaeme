@@ -273,7 +273,7 @@
   </nav>
 
   <script>
-    // 1. CONEXIÓN A SUPABASE (Credenciales activas)
+    // 1. CONEXIÓN A SUPABASE
     const SUPABASE_URL = 'https://rydmmhiqsnvbbhklzyfb.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_N2gBPvn7Msh-TN49QkuxTQ_qendCCbC';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -282,6 +282,20 @@
       document.getElementById('input-compra-fecha').value = new Date().toISOString().split('T')[0];
       cargarTodo();
     });
+
+    // SISTEMA DE NOTIFICACIÓN FLOTANTE (Sin carteles molestos)
+    function mostrarNotificacion(mensaje) {
+      const toast = document.createElement('div');
+      toast.className = 'fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-emerald-500 text-white px-5 py-3 rounded-2xl font-bold text-sm shadow-2xl flex items-center space-x-2 transition-all duration-300 transform translate-y-0 opacity-100 border border-emerald-400';
+      toast.innerHTML = `<i class="fa-solid fa-circle-check text-lg"></i> <span>${mensaje}</span>`;
+
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', '-translate-y-4');
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
+    }
 
     async function cargarTodo() {
       await cargarProductos();
@@ -417,8 +431,7 @@
         precio_costo_pack: costoUnitarioPack
       }).eq('id', productoId);
 
-      // Intenta guardar en la tabla "compras" (o "stock_purchases" como fallback)
-      let { error: errorCompra } = await db.from('compras').insert({
+      const { error: errorCompra } = await db.from('compras').insert({
         producto_nombre: prodActual.nombre,
         cantidad_packs: totalPacksComprados,
         costo_total: costoTotal,
@@ -426,63 +439,43 @@
       });
 
       if (errorCompra) {
-        // Fallback por si la tabla se llama stock_purchases
-        const { error: fallbackError } = await db.from('stock_purchases').insert({
-          product: prodActual.nombre,
-          pallets: pallets,
-          loose_packs: packsSueltos,
-          total_cost: costoTotal,
-          cost_per_pack: costoUnitarioPack,
-          date: fechaCompra
-        });
-
-        if (fallbackError) {
-          alert('Error al registrar compra: ' + errorCompra.message);
-          return;
-        }
+        alert('Error al registrar compra: ' + errorCompra.message);
+        return;
       }
 
-      alert('¡Compra registrada con éxito!');
+      mostrarNotificacion('¡Compra registrada con éxito!');
       document.getElementById('form-compra').reset();
       document.getElementById('input-compra-fecha').value = new Date().toISOString().split('T')[0];
       document.getElementById('campo-nuevo-producto').classList.add('hidden');
       cargarTodo();
     }
 
-    // 5. CARGAR HISTORIAL DE COMPRAS CON DIAGNÓSTICO DE ERRORES
+    // 5. CARGAR HISTORIAL DE COMPRAS
     async function cargarHistorialCompras() {
       const tbody = document.getElementById('tabla-historial-compras');
-      
-      // Intentar leer de "compras"
-      let res = await db.from('compras').select('*');
+      const { data: compras, error } = await db.from('compras').select('*');
 
-      // Fallback a "stock_purchases" si la primera falla
-      if (res.error) {
-        res = await db.from('stock_purchases').select('*');
-      }
-
-      if (res.error) {
-        console.error('Error Supabase al cargar compras:', res.error);
-        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-400 font-semibold">Error Supabase: ${res.error.message}</td></tr>`;
+      if (error) {
+        console.error('Error Supabase al cargar compras:', error);
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-400 font-semibold">Error Supabase: ${error.message}</td></tr>`;
         return;
       }
 
-      const compras = res.data || [];
       tbody.innerHTML = '';
 
-      if (compras.length === 0) {
+      if (!compras || compras.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500">No hay compras registradas aún.</td></tr>';
         return;
       }
 
-      compras.sort((a, b) => new Date(b.fecha || b.date || 0) - new Date(a.fecha || a.date || 0));
+      compras.sort((a, b) => new Date(b.fecha || b.created_at || 0) - new Date(a.fecha || a.created_at || 0));
 
       compras.forEach(c => {
-        const fechaFmt = c.fecha || c.date || '-';
-        const producto = c.producto_nombre || c.product || 'Producto';
-        const packs = Number(c.cantidad_packs || c.loose_packs || 0);
-        const total = Number(c.costo_total || c.total_cost || 0);
-        const costoPack = c.cost_per_pack || (packs > 0 ? (total / packs).toFixed(2) : '0');
+        const fechaFmt = c.fecha || '-';
+        const producto = c.producto_nombre || 'Producto';
+        const packs = Number(c.cantidad_packs || 0);
+        const total = Number(c.costo_total || 0);
+        const costoPack = packs > 0 ? (total / packs).toFixed(2) : '0';
 
         tbody.innerHTML += `
           <tr class="hover:bg-slate-800/40">
@@ -542,7 +535,7 @@
         }
       }
 
-      alert('¡Venta registrada con éxito!');
+      mostrarNotificacion('¡Venta registrada con éxito!');
       document.getElementById('form-venta').reset();
       document.getElementById('campo-nuevo-cliente').classList.add('hidden');
       cargarTodo();
@@ -604,7 +597,7 @@
 
       await db.from('gastos').insert({ categoria, monto, descripcion });
 
-      alert('¡Gasto registrado!');
+      mostrarNotificacion('¡Gasto registrado con éxito!');
       document.getElementById('form-gasto').reset();
     }
 
@@ -612,6 +605,7 @@
     async function cobrarDeuda(clienteId) {
       if (confirm('¿Confirmás que el cliente pagó la deuda completa?')) {
         await db.from('clientes').update({ saldo_deuda: 0 }).eq('id', clienteId);
+        mostrarNotificacion('¡Deuda saldada correctamente!');
         cargarTodo();
       }
     }
