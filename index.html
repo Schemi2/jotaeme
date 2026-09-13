@@ -138,6 +138,12 @@
         </h2>
         
         <form id="form-compra" class="space-y-4">
+          <!-- Fecha de la Compra -->
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Fecha de la Compra</label>
+            <input type="date" id="input-compra-fecha" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+          </div>
+
           <div>
             <label class="block text-xs text-slate-400 mb-1">Seleccionar Producto o Crear Nuevo</label>
             <select id="select-compra-producto" onchange="toggleNuevoProducto(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500">
@@ -185,10 +191,20 @@
       <!-- TABLA DE PRODUCTOS EN STOCK -->
       <section>
         <h2 class="text-sm font-semibold text-slate-300 mb-3 flex items-center">
-          <i class="fa-solid fa-list-check text-emerald-400 mr-2"></i> Inventario Completo
+          <i class="fa-solid fa-list-check text-emerald-400 mr-2"></i> Inventario Actual
         </h2>
         <div class="space-y-2.5" id="tabla-inventario">
           <p class="text-xs text-slate-500">Cargando inventario...</p>
+        </div>
+      </section>
+
+      <!-- HISTORIAL DE COMPRAS REGISTRADAS -->
+      <section>
+        <h2 class="text-sm font-semibold text-slate-300 mb-3 flex items-center">
+          <i class="fa-solid fa-clock-rotate-left text-blue-400 mr-2"></i> Historial de Lotes Comprados
+        </h2>
+        <div class="space-y-2.5" id="historial-compras">
+          <p class="text-xs text-slate-500">Cargando historial...</p>
         </div>
       </section>
 
@@ -267,11 +283,14 @@
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     document.addEventListener('DOMContentLoaded', () => {
+      // Establecer fecha por defecto (hoy) en el selector de compras
+      document.getElementById('input-compra-fecha').value = new Date().toISOString().split('T')[0];
       cargarTodo();
     });
 
     async function cargarTodo() {
       await cargarProductos();
+      await cargarHistorialCompras();
       await cargarClientes();
       await cargarMetricasYVentas();
     }
@@ -358,7 +377,7 @@
           <div class="glass-card p-3 rounded-xl flex justify-between items-center text-xs">
             <div>
               <div class="font-bold text-sm text-slate-100">${p.nombre}</div>
-              <div class="text-slate-400">Costo Pack: <span class="text-slate-200 font-medium">$ ${p.precio_costo_pack || 0}</span></div>
+              <div class="text-slate-400">Último Costo Pack: <span class="text-slate-200 font-medium">$ ${p.precio_costo_pack || 0}</span></div>
             </div>
             <div class="text-right">
               <div class="font-bold text-emerald-400 text-sm">${p.stock_packs} Packs</div>
@@ -373,8 +392,9 @@
       });
     }
 
-    // 4. GUARDAR COMPRA / NUEVO PRODUCTO
+    // 4. GUARDAR COMPRA CON FECHA
     async function guardarCompra() {
+      const fechaCompra = document.getElementById('input-compra-fecha').value || new Date().toISOString().split('T')[0];
       let productoId = document.getElementById('select-compra-producto').value;
       const nuevoNombre = document.getElementById('input-nuevo-producto-nombre').value.trim();
       const packsPorPalletInput = Number(document.getElementById('input-nuevo-packs-pallet').value || 100);
@@ -419,26 +439,60 @@
       const costoUnitarioPack = Number((costoTotal / totalPacksComprados).toFixed(2));
       const nuevoStock = prodActual.stock_packs + totalPacksComprados;
 
-      // Actualizar producto en Supabase
+      // 1. Actualizar stock general y último precio de costo en tabla 'productos'
       await db.from('productos').update({ 
         stock_packs: nuevoStock,
         precio_costo_pack: costoUnitarioPack
       }).eq('id', productoId);
 
-      // Registrar la transacción de compra
+      // 2. Guardar registro individual de compra con su FECHA en tabla 'compras'
       await db.from('compras').insert({
         producto_nombre: prodActual.nombre,
         cantidad_packs: totalPacksComprados,
-        costo_total: costoTotal
+        costo_total: costoTotal,
+        fecha: fechaCompra
       });
 
-      alert(`¡Excelente! Stock ingresado correctamente para ${prodActual.nombre}.`);
+      alert(`¡Excelente! Compra registrada el ${fechaCompra} para ${prodActual.nombre}.`);
       document.getElementById('form-compra').reset();
+      document.getElementById('input-compra-fecha').value = new Date().toISOString().split('T')[0];
       document.getElementById('campo-nuevo-producto').classList.add('hidden');
       cargarTodo();
     }
 
-    // 5. REGISTRAR VENTA
+    // 5. HISTORIAL DE COMPRAS REGISTRADAS
+    async function cargarHistorialCompras() {
+      const { data: compras, error } = await db.from('compras').select('*').order('fecha', { ascending: false });
+      if (error) return console.error(error);
+
+      const contenedor = document.getElementById('historial-compras');
+      contenedor.innerHTML = '';
+
+      if (!compras || compras.length === 0) {
+        contenedor.innerHTML = '<p class="text-xs text-slate-500">No hay historial de compras cargadas.</p>';
+        return;
+      }
+
+      compras.forEach(c => {
+        const f = c.fecha ? new Date(c.fecha + 'T00:00:00').toLocaleDateString('es-AR') : 'Sin fecha';
+        const costoUnitario = (Number(c.costo_total) / (Number(c.cantidad_packs) || 1)).toFixed(2);
+
+        contenedor.innerHTML += `
+          <div class="glass-card p-3 rounded-xl flex justify-between items-center text-xs">
+            <div>
+              <div class="font-bold text-slate-100">${c.producto_nombre}</div>
+              <div class="text-slate-400 text-[11px]"><i class="fa-regular fa-calendar-days mr-1 text-blue-400"></i>${f}</div>
+            </div>
+            <div class="text-right">
+              <div class="font-bold text-blue-400 text-sm">$ ${Number(c.costo_total).toLocaleString()}</div>
+              <div class="text-[10px] text-slate-400">${c.cantidad_packs} packs ($${costoUnitario}/u)</div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // 6. REGISTRAR VENTA
     async function guardarVenta() {
       let clienteNombre = document.getElementById('select-cliente').value;
       const nuevoCliente = document.getElementById('nombre-nuevo-cliente').value.trim();
@@ -493,7 +547,7 @@
       cargarTodo();
     }
 
-    // 6. CLIENTES Y DEUDAS
+    // 7. CLIENTES Y DEUDAS
     async function cargarClientes() {
       const { data: clientes, error } = await db.from('clientes').select('*');
       if (error) return console.error(error);
@@ -539,7 +593,7 @@
       document.getElementById('metric-por-cobrar').textContent = `$ ${totalDeuda.toLocaleString()}`;
     }
 
-    // 7. REGISTRAR GASTO
+    // 8. REGISTRAR GASTO
     async function guardarGasto() {
       const categoria = document.getElementById('select-gasto-categoria').value;
       const monto = Number(document.getElementById('input-gasto-monto').value || 0);
@@ -553,7 +607,7 @@
       document.getElementById('form-gasto').reset();
     }
 
-    // 8. SALDAR DEUDA
+    // 9. SALDAR DEUDA
     async function cobrarDeuda(clienteId) {
       if (confirm('¿Confirmás que el cliente pagó la deuda completa?')) {
         await db.from('clientes').update({ saldo_deuda: 0 }).eq('id', clienteId);
@@ -561,7 +615,7 @@
       }
     }
 
-    // 9. METRICAS
+    // 10. METRICAS
     async function cargarMetricasYVentas() {
       const { data: ventas } = await db.from('ventas').select('*');
       if (!ventas) return;
