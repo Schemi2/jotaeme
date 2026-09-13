@@ -34,7 +34,7 @@
 
   <main class="p-4 max-w-lg mx-auto">
 
-    <!-- PESTAÑA 1: INICIO Y VENTA RÁPIDA -->
+    <!-- PESTAÑA 1: INICIO (Métricas y resumen de stock) -->
     <div id="tab-inicio" class="tab-content active space-y-6">
       
       <!-- Métricas del día -->
@@ -63,8 +63,13 @@
         </div>
       </section>
 
+    </div>
+
+    <!-- PESTAÑA 2: VENTAS (Formulario Venta + Historial) -->
+    <div id="tab-ventas" class="tab-content space-y-6">
+      
       <!-- Formulario Venta Rápida -->
-      <section class="glass-card p-4 rounded-2xl border border-blue-500/30">
+      <section class="glass-card p-4 rounded-2xl border border-emerald-500/30">
         <h2 class="text-base font-bold text-white mb-4 flex items-center">
           <i class="fa-solid fa-cart-plus text-emerald-400 mr-2"></i> Nueva Venta
         </h2>
@@ -121,13 +126,40 @@
           </button>
         </form>
       </section>
+
+      <!-- TABLA HISTORIAL DE VENTAS -->
+      <section>
+        <h2 class="text-sm font-semibold text-slate-300 mb-3 flex items-center">
+          <i class="fa-solid fa-clock-rotate-left text-emerald-400 mr-2"></i> Historial de Ventas
+        </h2>
+        <div class="overflow-x-auto rounded-xl glass-card border border-slate-800">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px]">
+              <tr>
+                <th class="p-2.5">Fecha</th>
+                <th class="p-2.5">Cliente</th>
+                <th class="p-2.5">Producto</th>
+                <th class="p-2.5">Cantidad</th>
+                <th class="p-2.5 text-right">Total</th>
+                <th class="p-2.5 text-right">Pago</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-historial-ventas" class="divide-y divide-slate-800 text-slate-200">
+              <tr>
+                <td colspan="6" class="p-4 text-center text-slate-500">Cargando ventas...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
     </div>
 
-    <!-- PESTAÑA 2: STOCK Y COMPRAS -->
+    <!-- PESTAÑA 3: STOCK Y COMPRAS -->
     <div id="tab-stock" class="tab-content space-y-6">
       
       <!-- Formulario Carga de Stock -->
-      <section class="glass-card p-4 rounded-2xl border border-emerald-500/30">
+      <section class="glass-card p-4 rounded-2xl border border-blue-500/30">
         <h2 class="text-base font-bold text-white mb-4 flex items-center">
           <i class="fa-solid fa-truck-ramp-box text-blue-400 mr-2"></i> Cargar / Reponer Stock
         </h2>
@@ -206,7 +238,7 @@
 
     </div>
 
-    <!-- PESTAÑA 3: GASTOS OPERATIVOS -->
+    <!-- PESTAÑA 4: GASTOS OPERATIVOS -->
     <div id="tab-gastos" class="tab-content space-y-6">
       <section class="glass-card p-4 rounded-2xl border border-amber-500/30">
         <h2 class="text-base font-bold text-white mb-4 flex items-center">
@@ -238,7 +270,7 @@
       </section>
     </div>
 
-    <!-- PESTAÑA 4: CLIENTES Y CUENTAS CORRIENTES -->
+    <!-- PESTAÑA 5: CLIENTES Y CUENTAS CORRIENTES -->
     <div id="tab-clientes" class="tab-content space-y-6">
       <section>
         <h2 class="text-sm font-semibold text-slate-300 mb-3 flex items-center">
@@ -252,11 +284,15 @@
 
   </main>
 
-  <!-- NAVEGACIÓN INFERIOR (BOTTOM NAV BAR) -->
+  <!-- NAVEGACIÓN INFERIOR (5 PESTAÑAS) -->
   <nav class="fixed bottom-0 left-0 right-0 bg-slate-900/95 border-t border-slate-800 p-2 flex justify-around items-center backdrop-blur z-50 max-w-lg mx-auto">
     <button onclick="cambiarTab('inicio', this)" class="nav-btn active flex flex-col items-center text-blue-400 text-xs py-1">
       <i class="fa-solid fa-house text-lg mb-1"></i>
       <span>Inicio</span>
+    </button>
+    <button onclick="cambiarTab('ventas', this)" class="nav-btn flex flex-col items-center text-slate-400 text-xs py-1">
+      <i class="fa-solid fa-cart-shopping text-lg mb-1"></i>
+      <span>Ventas</span>
     </button>
     <button onclick="cambiarTab('stock', this)" class="nav-btn flex flex-col items-center text-slate-400 text-xs py-1">
       <i class="fa-solid fa-boxes-packing text-lg mb-1"></i>
@@ -283,7 +319,7 @@
       cargarTodo();
     });
 
-    // SISTEMA DE NOTIFICACIÓN FLOTANTE (Sin carteles molestos)
+    // SISTEMA DE NOTIFICACIÓN FLOTANTE
     function mostrarNotificacion(mensaje) {
       const toast = document.createElement('div');
       toast.className = 'fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-emerald-500 text-white px-5 py-3 rounded-2xl font-bold text-sm shadow-2xl flex items-center space-x-2 transition-all duration-300 transform translate-y-0 opacity-100 border border-emerald-400';
@@ -299,6 +335,7 @@
 
     async function cargarTodo() {
       await cargarProductos();
+      await cargarHistorialVentas();
       await cargarHistorialCompras();
       await cargarClientes();
       await cargarMetricasYVentas();
@@ -381,7 +418,102 @@
       });
     }
 
-    // 4. GUARDAR COMPRA
+    // 4. GUARDAR VENTA & CARGAR HISTORIAL DE VENTAS
+    async function guardarVenta() {
+      let clienteNombre = document.getElementById('select-cliente').value;
+      const nuevoCliente = document.getElementById('nombre-nuevo-cliente').value.trim();
+      const productoId = document.getElementById('select-producto-venta').value;
+      const pallets = Number(document.getElementById('input-pallets').value || 0);
+      const packsSueltos = Number(document.getElementById('input-packs').value || 0);
+      const montoTotal = Number(document.getElementById('input-monto-total').value || 0);
+      const metodoPago = document.getElementById('select-metodo-pago').value;
+
+      if (clienteNombre === '__NUEVO__') {
+        if (!nuevoCliente) return alert('Escribí el nombre del nuevo cliente');
+        clienteNombre = nuevoCliente;
+        await db.from('clientes').insert({ nombre: clienteNombre });
+      }
+
+      if (!clienteNombre || !productoId || montoTotal <= 0) {
+        return alert('Completá cliente, producto y monto de venta.');
+      }
+
+      const { data: prod } = await db.from('productos').select('*').eq('id', productoId).single();
+      const totalPacksVendidos = (pallets * (prod.packs_por_pallet || 100)) + packsSueltos;
+
+      if (totalPacksVendidos <= 0) return alert('Ingresá una cantidad vendida.');
+
+      if (totalPacksVendidos > prod.stock_packs) {
+        return alert(`Stock insuficiente. Quedan ${prod.stock_packs} packs.`);
+      }
+
+      await db.from('ventas').insert({
+        cliente_nombre: clienteNombre,
+        producto_nombre: prod.nombre,
+        cantidad_packs: totalPacksVendidos,
+        monto_total: montoTotal,
+        metodo_pago: metodoPago
+      });
+
+      await db.from('productos').update({ stock_packs: prod.stock_packs - totalPacksVendidos }).eq('id', productoId);
+
+      if (metodoPago === 'cuenta_corriente') {
+        const { data: c } = await db.from('clientes').select('*').eq('nombre', clienteNombre).single();
+        if (c) {
+          await db.from('clientes').update({ saldo_deuda: Number(c.saldo_deuda || 0) + montoTotal }).eq('id', c.id);
+        }
+      }
+
+      mostrarNotificacion('¡Venta registrada con éxito!');
+      document.getElementById('form-venta').reset();
+      document.getElementById('campo-nuevo-cliente').classList.add('hidden');
+      cargarTodo();
+    }
+
+    async function cargarHistorialVentas() {
+      const tbody = document.getElementById('tabla-historial-ventas');
+      const { data: ventas, error } = await db.from('ventas').select('*');
+
+      if (error) {
+        console.error('Error Supabase al cargar ventas:', error);
+        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-400 font-semibold">Error Supabase: ${error.message}</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = '';
+
+      if (!ventas || ventas.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-500">No hay ventas registradas aún.</td></tr>';
+        return;
+      }
+
+      ventas.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+      ventas.forEach(v => {
+        const fechaFmt = v.created_at ? new Date(v.created_at).toLocaleDateString('es-AR') : '-';
+        const cliente = v.cliente_nombre || 'Cliente';
+        const producto = v.producto_nombre || 'Producto';
+        const packs = Number(v.cantidad_packs || 0);
+        const total = Number(v.monto_total || 0);
+        
+        let pagoBadge = '💵 Efectivo';
+        if (v.metodo_pago === 'transferencia') pagoBadge = '📱 Transf.';
+        if (v.metodo_pago === 'cuenta_corriente') pagoBadge = '📝 Fiado';
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-800/40">
+            <td class="p-2.5 text-slate-400 text-[11px]">${fechaFmt}</td>
+            <td class="p-2.5 font-semibold text-slate-100">${cliente}</td>
+            <td class="p-2.5 text-slate-300">${producto}</td>
+            <td class="p-2.5 text-cyan-400">${packs} packs</td>
+            <td class="p-2.5 text-right font-bold text-emerald-400">$ ${total.toLocaleString()}</td>
+            <td class="p-2.5 text-right text-[11px] text-slate-400">${pagoBadge}</td>
+          </tr>
+        `;
+      });
+    }
+
+    // 5. GUARDAR Y CARGAR COMPRAS
     async function guardarCompra() {
       const fechaCompra = document.getElementById('input-compra-fecha').value || new Date().toISOString().split('T')[0];
       let productoId = document.getElementById('select-compra-producto').value;
@@ -450,7 +582,6 @@
       cargarTodo();
     }
 
-    // 5. CARGAR HISTORIAL DE COMPRAS
     async function cargarHistorialCompras() {
       const tbody = document.getElementById('tabla-historial-compras');
       const { data: compras, error } = await db.from('compras').select('*');
@@ -489,59 +620,7 @@
       });
     }
 
-    // 6. GUARDAR VENTA
-    async function guardarVenta() {
-      let clienteNombre = document.getElementById('select-cliente').value;
-      const nuevoCliente = document.getElementById('nombre-nuevo-cliente').value.trim();
-      const productoId = document.getElementById('select-producto-venta').value;
-      const pallets = Number(document.getElementById('input-pallets').value || 0);
-      const packsSueltos = Number(document.getElementById('input-packs').value || 0);
-      const montoTotal = Number(document.getElementById('input-monto-total').value || 0);
-      const metodoPago = document.getElementById('select-metodo-pago').value;
-
-      if (clienteNombre === '__NUEVO__') {
-        if (!nuevoCliente) return alert('Escribí el nombre del nuevo cliente');
-        clienteNombre = nuevoCliente;
-        await db.from('clientes').insert({ nombre: clienteNombre });
-      }
-
-      if (!clienteNombre || !productoId || montoTotal <= 0) {
-        return alert('Completá cliente, producto y monto de venta.');
-      }
-
-      const { data: prod } = await db.from('productos').select('*').eq('id', productoId).single();
-      const totalPacksVendidos = (pallets * (prod.packs_por_pallet || 100)) + packsSueltos;
-
-      if (totalPacksVendidos <= 0) return alert('Ingresá una cantidad vendida.');
-
-      if (totalPacksVendidos > prod.stock_packs) {
-        return alert(`Stock insuficiente. Quedan ${prod.stock_packs} packs.`);
-      }
-
-      await db.from('ventas').insert({
-        cliente_nombre: clienteNombre,
-        producto_nombre: prod.nombre,
-        cantidad_packs: totalPacksVendidos,
-        monto_total: montoTotal,
-        metodo_pago: metodoPago
-      });
-
-      await db.from('productos').update({ stock_packs: prod.stock_packs - totalPacksVendidos }).eq('id', productoId);
-
-      if (metodoPago === 'cuenta_corriente') {
-        const { data: c } = await db.from('clientes').select('*').eq('nombre', clienteNombre).single();
-        if (c) {
-          await db.from('clientes').update({ saldo_deuda: Number(c.saldo_deuda || 0) + montoTotal }).eq('id', c.id);
-        }
-      }
-
-      mostrarNotificacion('¡Venta registrada con éxito!');
-      document.getElementById('form-venta').reset();
-      document.getElementById('campo-nuevo-cliente').classList.add('hidden');
-      cargarTodo();
-    }
-
-    // 7. CLIENTES Y DEUDAS
+    // 6. CLIENTES Y DEUDAS
     async function cargarClientes() {
       const { data: clientes, error } = await db.from('clientes').select('*');
       if (error) return console.error('Error clientes:', error);
@@ -587,7 +666,7 @@
       document.getElementById('metric-por-cobrar').textContent = `$ ${totalDeuda.toLocaleString()}`;
     }
 
-    // 8. GASTOS
+    // 7. GASTOS
     async function guardarGasto() {
       const categoria = document.getElementById('select-gasto-categoria').value;
       const monto = Number(document.getElementById('input-gasto-monto').value || 0);
@@ -601,7 +680,7 @@
       document.getElementById('form-gasto').reset();
     }
 
-    // 9. SALDAR DEUDA
+    // 8. SALDAR DEUDA
     async function cobrarDeuda(clienteId) {
       if (confirm('¿Confirmás que el cliente pagó la deuda completa?')) {
         await db.from('clientes').update({ saldo_deuda: 0 }).eq('id', clienteId);
@@ -610,13 +689,13 @@
       }
     }
 
-    // 10. MÉTRICAS
+    // 9. MÉTRICAS
     async function cargarMetricasYVentas() {
       const { data: ventas } = await db.from('ventas').select('*');
       if (!ventas) return;
 
       const hoy = new Date().toISOString().split('T')[0];
-      const ventasHoy = ventas.filter(v => v.fecha && v.fecha.startsWith(hoy));
+      const ventasHoy = ventas.filter(v => v.created_at && v.created_at.startsWith(hoy));
       const totalHoy = ventasHoy.reduce((acc, v) => acc + Number(v.monto_total), 0);
 
       document.getElementById('metric-ventas-hoy').textContent = `$ ${totalHoy.toLocaleString()}`;
