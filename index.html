@@ -4,8 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Control Distribuidora</title>
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome para Íconos -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
     .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.08); }
@@ -37,13 +41,13 @@
       <section class="grid grid-cols-2 gap-3">
         <div class="glass-card p-4 rounded-2xl">
           <span class="text-xs text-slate-400 font-medium">Ventas de Hoy</span>
-          <div class="text-xl font-bold text-emerald-400 mt-1">$ 185.000</div>
-          <span class="text-[10px] text-emerald-500/80">3 pedidos realizados</span>
+          <div class="text-xl font-bold text-emerald-400 mt-1" id="metric-ventas-hoy">$ 0</div>
+          <span class="text-[10px] text-emerald-500/80">0 pedidos realizados</span>
         </div>
         <div class="glass-card p-4 rounded-2xl">
           <span class="text-xs text-slate-400 font-medium">Por Cobrar (Cta Cte)</span>
-          <div class="text-xl font-bold text-amber-400 mt-1">$ 45.000</div>
-          <span class="text-[10px] text-amber-500/80">2 supermercados debiendo</span>
+          <div class="text-xl font-bold text-amber-400 mt-1" id="metric-por-cobrar">$ 0</div>
+          <span class="text-[10px] text-amber-500/80">0 supermercados debiendo</span>
         </div>
       </section>
 
@@ -54,7 +58,7 @@
             <i class="fa-solid fa-boxes-stacked text-blue-400 mr-1.5"></i> Stock Disponible
           </h2>
         </div>
-        <div class="space-y-2.5">
+        <div class="space-y-2.5" id="lista-stock-inicio">
           <div class="glass-card p-3 rounded-xl flex items-center justify-between">
             <div class="flex items-center space-x-3">
               <div class="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 font-bold text-lg">🥤</div>
@@ -64,8 +68,8 @@
               </div>
             </div>
             <div class="text-right">
-              <div class="text-sm font-bold text-slate-100">350 Packs</div>
-              <div class="text-[11px] text-emerald-400 font-medium">~3.5 Pallets</div>
+              <div class="text-sm font-bold text-slate-100">0 Packs</div>
+              <div class="text-[11px] text-emerald-400 font-medium">~0.0 Pallets</div>
             </div>
           </div>
         </div>
@@ -82,9 +86,7 @@
           <div>
             <label class="block text-xs text-slate-400 mb-1">Cliente / Supermercado</label>
             <select id="select-cliente" onchange="toggleNuevoCliente(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500">
-              <option value="Supermercado El Sol">Supermercado El Sol (San Justo)</option>
-              <option value="Autoservicio Don Pepe">Autoservicio Don Pepe</option>
-              <option value="Almacén Los Primos">Almacén Los Primos</option>
+              <option value="">Seleccionar cliente...</option>
               <option value="__NUEVO__" class="text-emerald-400 font-bold">+ Crear Nuevo Cliente</option>
             </select>
           </div>
@@ -98,9 +100,8 @@
           <!-- Producto -->
           <div>
             <label class="block text-xs text-slate-400 mb-1">Producto</label>
-            <select class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500">
-              <option>Manaos Cola 2.25L (Stock: 350 packs)</option>
-              <option>Manaos Naranja 2.25L (Stock: 40 packs)</option>
+            <select id="select-producto-venta" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500">
+              <option value="">Seleccionar producto...</option>
             </select>
           </div>
 
@@ -108,11 +109,11 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs text-slate-400 mb-1">Pallets completos</label>
-              <input type="number" placeholder="Ej: 1" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none">
+              <input type="number" id="input-pallets" placeholder="Ej: 1" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none">
             </div>
             <div>
               <label class="block text-xs text-slate-400 mb-1">Packs sueltos</label>
-              <input type="number" placeholder="Ej: 15" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none">
+              <input type="number" id="input-packs" placeholder="Ej: 15" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none">
             </div>
           </div>
 
@@ -120,19 +121,19 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs text-slate-400 mb-1">Total Venta ($)</label>
-              <input type="number" placeholder="115000" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm font-bold text-emerald-400">
+              <input type="number" id="input-monto-total" placeholder="115000" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm font-bold text-emerald-400">
             </div>
             <div>
               <label class="block text-xs text-slate-400 mb-1">Forma de Pago</label>
-              <select class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm">
+              <select id="select-metodo-pago" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm">
                 <option value="efectivo">💵 Efectivo</option>
                 <option value="transferencia">📱 Transferencia</option>
-                <option value="cta_cte">📝 Fiado / Cta Cte</option>
+                <option value="cuenta_corriente">📝 Fiado / Cta Cte</option>
               </select>
             </div>
           </div>
 
-          <button type="button" onclick="guardarVentaDemo()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all">
+          <button type="button" onclick="guardarVenta()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all">
             <i class="fa-solid fa-check mr-2"></i> Guardar Venta
           </button>
         </form>
@@ -148,22 +149,21 @@
         <form class="space-y-4">
           <div>
             <label class="block text-xs text-slate-400 mb-1">Producto Adquirido</label>
-            <select class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm">
-              <option>Manaos Cola 2.25L</option>
-              <option>Manaos Naranja 2.25L</option>
+            <select id="select-compra-producto" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm">
+              <option value="">Cargando productos...</option>
             </select>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs text-slate-400 mb-1">Cantidad Pallets</label>
-              <input type="number" placeholder="Ej: 5" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm">
+              <label class="block text-xs text-slate-400 mb-1">Cantidad Packs Total</label>
+              <input type="number" id="input-compra-packs" placeholder="Ej: 500" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm">
             </div>
             <div>
               <label class="block text-xs text-slate-400 mb-1">Costo Total ($)</label>
-              <input type="number" placeholder="Ej: 450000" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm font-bold text-blue-400">
+              <input type="number" id="input-compra-costo" placeholder="Ej: 450000" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm font-bold text-blue-400">
             </div>
           </div>
-          <button type="button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl">
+          <button type="button" onclick="guardarCompra()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl">
             <i class="fa-solid fa-plus mr-2"></i> Ingresar Stock
           </button>
         </form>
@@ -179,22 +179,23 @@
         <form class="space-y-4">
           <div>
             <label class="block text-xs text-slate-400 mb-1">Tipo de Gasto</label>
-            <select class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm">
+            <select id="select-gasto-categoria" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm">
               <option value="nafta">⛽ Combustible / Nafta</option>
               <option value="peaje">🛣️ Peaje / Estacionamiento</option>
               <option value="vehiculo">🔧 Mantenimiento Camioneta</option>
               <option value="comida">🥪 Almuerzo / Comida</option>
+              <option value="otros">📦 Otros Gastos</option>
             </select>
           </div>
           <div>
             <label class="block text-xs text-slate-400 mb-1">Monto ($)</label>
-            <input type="number" placeholder="Ej: 15000" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm font-bold text-amber-400">
+            <input type="number" id="input-gasto-monto" placeholder="Ej: 15000" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm font-bold text-amber-400">
           </div>
           <div>
             <label class="block text-xs text-slate-400 mb-1">Detalle / Notas</label>
-            <input type="text" placeholder="Ej: Carga YPF Av. Mitre" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm">
+            <input type="text" id="input-gasto-descripcion" placeholder="Ej: Carga YPF Av. Mitre" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm">
           </div>
-          <button type="button" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-xl">
+          <button type="button" onclick="guardarGasto()" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-xl">
             <i class="fa-solid fa-receipt mr-2"></i> Guardar Gasto
           </button>
         </form>
@@ -208,19 +209,7 @@
           <i class="fa-solid fa-users text-emerald-400 mr-2"></i> Saldos y Cuentas Corrientes
         </h2>
         <div class="space-y-3" id="lista-clientes-deudores">
-          <div class="glass-card p-4 rounded-xl flex justify-between items-center">
-            <div>
-              <div class="font-bold text-sm text-slate-100">Supermercado El Sol</div>
-              <div class="text-xs text-slate-400">San Justo • Tel: 11-4433-2211</div>
-            </div>
-            <div class="text-right">
-              <div class="text-xs text-slate-400">Deuda actual</div>
-              <div class="text-base font-bold text-amber-400">$ 25.000</div>
-              <button class="mt-1 text-[11px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30">
-                Cobrar
-              </button>
-            </div>
-          </div>
+          <p class="text-xs text-slate-500">Cargando clientes...</p>
         </div>
       </section>
     </div>
@@ -248,7 +237,12 @@
   </nav>
 
   <script>
-    // Cambio de pestañas
+    // 1. INICIALIZAR CONEXIÓN CON SUPABASE
+    const SUPABASE_URL = 'https://rydmmhiqsnvbbhklzyfb.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_N2gBPvn7Msh-TN49QkuxTQ_qendCCbC';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // 2. CAMBIO DE PESTAÑAS
     function cambiarTab(tabName, btn) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.nav-btn').forEach(el => {
@@ -261,7 +255,7 @@
       btn.classList.add('text-blue-400');
     }
 
-    // Mostrar/Ocultar campo nuevo cliente
+    // 3. MOSTRAR/OCULTAR CLIENTE NUEVO
     function toggleNuevoCliente(val) {
       const campo = document.getElementById('campo-nuevo-cliente');
       if (val === '__NUEVO__') {
@@ -271,33 +265,17 @@
       }
     }
 
-    // Guardar Venta Demo (agrega el cliente si es nuevo)
-    function guardarVentaDemo() {
-      const select = document.getElementById('select-cliente');
-      const inputNuevo = document.getElementById('nombre-nuevo-cliente');
+    // 4. FUNCIONES TEMPORALES / PROTOTIPO
+    async function guardarVenta() {
+      alert("Venta guardada (proximamente conectada a Supabase)");
+    }
 
-      if (select.value === '__NUEVO__') {
-        const nombreNuevo = inputNuevo.value.trim();
-        if (!nombreNuevo) {
-          alert('Por favor escribí el nombre del nuevo cliente.');
-          return;
-        }
+    async function guardarCompra() {
+      alert("Compra guardada (proximamente conectada a Supabase)");
+    }
 
-        // Crear la nueva opción y colocarla antes de la opción "Crear Nuevo Cliente"
-        const nuevaOpcion = document.createElement('option');
-        nuevaOpcion.value = nombreNuevo;
-        nuevaOpcion.textContent = nombreNuevo;
-        select.insertBefore(nuevaOpcion, select.options[select.options.length - 1]);
-
-        // Seleccionar el nuevo cliente recien creado
-        select.value = nombreNuevo;
-        inputNuevo.value = '';
-        document.getElementById('campo-nuevo-cliente').classList.add('hidden');
-        
-        alert(`¡Cliente "${nombreNuevo}" guardado y venta registrada!`);
-      } else {
-        alert('¡Venta registrada con éxito!');
-      }
+    async function guardarGasto() {
+      alert("Gasto guardado (proximamente conectado a Supabase)");
     }
   </script>
 </body>
