@@ -273,7 +273,7 @@
   </nav>
 
   <script>
-    // 1. CONEXIÓN A SUPABASE
+    // 1. CONEXIÓN A SUPABASE (Credenciales activas)
     const SUPABASE_URL = 'https://rydmmhiqsnvbbhklzyfb.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_N2gBPvn7Msh-TN49QkuxTQ_qendCCbC';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -321,10 +321,10 @@
       }
     }
 
-    // 3. LEER PRODUCTOS (INICIO & SELECTS)
+    // 3. LEER PRODUCTOS
     async function cargarProductos() {
       const { data: productos, error } = await db.from('productos').select('*');
-      if (error) return console.error(error);
+      if (error) console.error('Error al cargar productos:', error);
 
       const listaInicio = document.getElementById('lista-stock-inicio');
       const selectVenta = document.getElementById('select-producto-venta');
@@ -394,7 +394,7 @@
           precio_costo_pack: 0
         }).select().single();
 
-        if (error) return alert('Error al crear producto: ' + error.message);
+        if (error) return alert('Error al crear producto en Supabase: ' + error.message);
         prodActual = nuevoProd;
         productoId = nuevoProd.id;
       } else {
@@ -417,12 +417,30 @@
         precio_costo_pack: costoUnitarioPack
       }).eq('id', productoId);
 
-      await db.from('compras').insert({
+      // Intenta guardar en la tabla "compras" (o "stock_purchases" como fallback)
+      let { error: errorCompra } = await db.from('compras').insert({
         producto_nombre: prodActual.nombre,
         cantidad_packs: totalPacksComprados,
         costo_total: costoTotal,
         fecha: fechaCompra
       });
+
+      if (errorCompra) {
+        // Fallback por si la tabla se llama stock_purchases
+        const { error: fallbackError } = await db.from('stock_purchases').insert({
+          product: prodActual.nombre,
+          pallets: pallets,
+          loose_packs: packsSueltos,
+          total_cost: costoTotal,
+          cost_per_pack: costoUnitarioPack,
+          date: fechaCompra
+        });
+
+        if (fallbackError) {
+          alert('Error al registrar compra: ' + errorCompra.message);
+          return;
+        }
+      }
 
       alert('¡Compra registrada con éxito!');
       document.getElementById('form-compra').reset();
@@ -431,34 +449,45 @@
       cargarTodo();
     }
 
-    // 5. CÁRGA DE TABLA DE HISTORIAL DE COMPRAS
+    // 5. CARGAR HISTORIAL DE COMPRAS CON DIAGNÓSTICO DE ERRORES
     async function cargarHistorialCompras() {
       const tbody = document.getElementById('tabla-historial-compras');
-      const { data: compras, error } = await db.from('compras').select('*').order('fecha', { ascending: false });
+      
+      // Intentar leer de "compras"
+      let res = await db.from('compras').select('*');
 
-      if (error) {
-        console.error(error);
-        tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-400">Error al cargar historial.</td></tr>';
+      // Fallback a "stock_purchases" si la primera falla
+      if (res.error) {
+        res = await db.from('stock_purchases').select('*');
+      }
+
+      if (res.error) {
+        console.error('Error Supabase al cargar compras:', res.error);
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-400 font-semibold">Error Supabase: ${res.error.message}</td></tr>`;
         return;
       }
 
+      const compras = res.data || [];
       tbody.innerHTML = '';
 
-      if (!compras || compras.length === 0) {
+      if (compras.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500">No hay compras registradas aún.</td></tr>';
         return;
       }
 
+      compras.sort((a, b) => new Date(b.fecha || b.date || 0) - new Date(a.fecha || a.date || 0));
+
       compras.forEach(c => {
-        const fechaFmt = c.fecha ? c.fecha : '-';
-        const packs = Number(c.cantidad_packs) || 0;
-        const total = Number(c.costo_total) || 0;
-        const costoPack = packs > 0 ? (total / packs).toFixed(2) : '0';
+        const fechaFmt = c.fecha || c.date || '-';
+        const producto = c.producto_nombre || c.product || 'Producto';
+        const packs = Number(c.cantidad_packs || c.loose_packs || 0);
+        const total = Number(c.costo_total || c.total_cost || 0);
+        const costoPack = c.cost_per_pack || (packs > 0 ? (total / packs).toFixed(2) : '0');
 
         tbody.innerHTML += `
           <tr class="hover:bg-slate-800/40">
             <td class="p-2.5 text-slate-400 text-[11px]">${fechaFmt}</td>
-            <td class="p-2.5 font-semibold text-slate-100">${c.producto_nombre}</td>
+            <td class="p-2.5 font-semibold text-slate-100">${producto}</td>
             <td class="p-2.5 text-cyan-400">${packs} packs</td>
             <td class="p-2.5 text-right font-bold text-emerald-400">$ ${total.toLocaleString()}</td>
             <td class="p-2.5 text-right text-violet-400">$ ${costoPack}</td>
@@ -522,7 +551,7 @@
     // 7. CLIENTES Y DEUDAS
     async function cargarClientes() {
       const { data: clientes, error } = await db.from('clientes').select('*');
-      if (error) return console.error(error);
+      if (error) return console.error('Error clientes:', error);
 
       const selectCliente = document.getElementById('select-cliente');
       const listaDeudores = document.getElementById('lista-clientes-deudores');
@@ -587,7 +616,7 @@
       }
     }
 
-    // 10. METRICAS DE HOY
+    // 10. MÉTRICAS
     async function cargarMetricasYVentas() {
       const { data: ventas } = await db.from('ventas').select('*');
       if (!ventas) return;
