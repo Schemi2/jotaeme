@@ -81,7 +81,6 @@
         </h2>
 
         <form id="form-venta" class="space-y-4">
-          <!-- Fecha de la Venta -->
           <div>
             <label class="block text-xs text-slate-400 mb-1">Fecha de la Venta</label>
             <input type="date" id="input-venta-fecha" class="w-full max-w-full box-border appearance-none bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
@@ -154,11 +153,12 @@
                 <th class="p-2.5">Cantidad</th>
                 <th class="p-2.5 text-right">Total</th>
                 <th class="p-2.5 text-right">Pago</th>
+                <th class="p-2.5 text-center">Acción</th>
               </tr>
             </thead>
             <tbody id="tabla-historial-ventas" class="divide-y divide-slate-800 text-slate-200">
               <tr>
-                <td colspan="6" class="p-4 text-center text-slate-500">Cargando ventas...</td>
+                <td colspan="7" class="p-4 text-center text-slate-500">Cargando ventas...</td>
               </tr>
             </tbody>
           </table>
@@ -237,11 +237,12 @@
                 <th class="p-2.5">Cantidad</th>
                 <th class="p-2.5 text-right">Costo Total</th>
                 <th class="p-2.5 text-right">Costo x Pack</th>
+                <th class="p-2.5 text-center">Acción</th>
               </tr>
             </thead>
             <tbody id="tabla-historial-compras" class="divide-y divide-slate-800 text-slate-200">
               <tr>
-                <td colspan="5" class="p-4 text-center text-slate-500">Cargando historial...</td>
+                <td colspan="6" class="p-4 text-center text-slate-500">Cargando historial...</td>
               </tr>
             </tbody>
           </table>
@@ -395,6 +396,116 @@
     </div>
   </div>
 
+  <!-- MODAL PARA EDITAR VENTA -->
+  <div id="modal-editar-venta" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-md p-5 rounded-2xl border border-emerald-500/40 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white flex items-center">
+          <i class="fa-solid fa-pen-to-square text-emerald-400 mr-2"></i> Editar Registro de Venta
+        </h3>
+        <button onclick="cerrarModalEditarVenta()" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+
+      <input type="hidden" id="edit-venta-id">
+      <input type="hidden" id="edit-venta-packs-original">
+      <input type="hidden" id="edit-venta-prod-original">
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Fecha</label>
+          <input type="date" id="edit-venta-fecha" class="w-full max-w-full box-border appearance-none bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Cliente</label>
+          <select id="edit-venta-cliente" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none"></select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Producto</label>
+          <select id="edit-venta-producto" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none"></select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Cantidad Packs</label>
+            <input type="number" id="edit-venta-packs" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Total ($)</label>
+            <input type="number" id="edit-venta-total" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm font-bold text-emerald-400 focus:outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Forma de Pago</label>
+          <select id="edit-venta-pago" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
+            <option value="efectivo">💵 Efectivo</option>
+            <option value="transferencia">📱 Transferencia</option>
+            <option value="cuenta_corriente">📝 Fiado / Cta Cte</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex space-x-3 pt-2">
+        <button type="button" onclick="cerrarModalEditarVenta()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl">
+          Cancelar
+        </button>
+        <button type="button" onclick="guardarEdicionVenta()" class="w-1/2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg">
+          Guardar Cambios
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PARA EDITAR COMPRA -->
+  <div id="modal-editar-compra" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-md p-5 rounded-2xl border border-blue-500/40 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white flex items-center">
+          <i class="fa-solid fa-pen-to-square text-blue-400 mr-2"></i> Editar Registro de Compra
+        </h3>
+        <button onclick="cerrarModalEditarCompra()" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+
+      <input type="hidden" id="edit-compra-id">
+      <input type="hidden" id="edit-compra-packs-original">
+      <input type="hidden" id="edit-compra-prod-original">
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Fecha</label>
+          <input type="date" id="edit-compra-fecha" class="w-full max-w-full box-border appearance-none bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Producto</label>
+          <select id="edit-compra-producto" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none"></select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Cantidad Packs</label>
+            <input type="number" id="edit-compra-packs" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Costo Total ($)</label>
+            <input type="number" id="edit-compra-costo" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm font-bold text-blue-400 focus:outline-none">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex space-x-3 pt-2">
+        <button type="button" onclick="cerrarModalEditarCompra()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl">
+          Cancelar
+        </button>
+        <button type="button" onclick="guardarEdicionCompra()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg">
+          Guardar Cambios
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- NAVEGACIÓN INFERIOR (5 PESTAÑAS) -->
   <nav class="fixed bottom-0 left-0 right-0 bg-slate-900/95 border-t border-slate-800 p-2 flex justify-around items-center backdrop-blur z-50 max-w-lg mx-auto">
     <button onclick="cambiarTab('inicio', this)" class="nav-btn active flex flex-col items-center text-blue-400 text-xs py-1">
@@ -420,12 +531,15 @@
   </nav>
 
   <script>
-    // 1. CONEXIÓN A SUPABASE (Nuevas credenciales)
+    // 1. CONEXIÓN A SUPABASE
     const SUPABASE_URL = 'https://rydmmhiqsnvbbhklzyfb.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_N2gBPvn7Msh-TN49QkuxTQ_qendCCbC';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let clientesGlobales = [];
+    let productosGlobales = [];
+    let ventasGlobales = [];
+    let comprasGlobales = [];
 
     document.addEventListener('DOMContentLoaded', () => {
       const hoy = new Date().toISOString().split('T')[0];
@@ -491,6 +605,8 @@
     async function cargarProductos() {
       const { data: productos, error } = await db.from('productos').select('*');
       if (error) console.error('Error al cargar productos:', error);
+
+      productosGlobales = productos || [];
 
       const listaInicio = document.getElementById('lista-stock-inicio');
       const selectVenta = document.getElementById('select-producto-venta');
@@ -594,14 +710,15 @@
 
       if (error) {
         console.error('Error Supabase al cargar ventas:', error);
-        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-400 font-semibold">Error Supabase: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-400 font-semibold">Error Supabase: ${error.message}</td></tr>`;
         return;
       }
 
+      ventasGlobales = ventas || [];
       tbody.innerHTML = '';
 
       if (!ventas || ventas.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-500">No hay ventas registradas aún.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-500">No hay ventas registradas aún.</td></tr>';
         return;
       }
 
@@ -632,9 +749,91 @@
             <td class="p-2.5 text-cyan-400">${packs} packs</td>
             <td class="p-2.5 text-right font-bold text-emerald-400">$ ${total.toLocaleString()}</td>
             <td class="p-2.5 text-right text-[11px] text-slate-400">${pagoBadge}</td>
+            <td class="p-2.5 text-center">
+              <button onclick="abrirModalEditarVenta(${v.id})" class="text-emerald-400 hover:text-emerald-300 p-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+            </td>
           </tr>
         `;
       });
+    }
+
+    // MODAL EDICIÓN VENTA
+    function abrirModalEditarVenta(id) {
+      const v = ventasGlobales.find(item => item.id === id);
+      if (!v) return;
+
+      document.getElementById('edit-venta-id').value = v.id;
+      document.getElementById('edit-venta-packs-original').value = v.cantidad_packs || 0;
+      document.getElementById('edit-venta-prod-original').value = v.producto_nombre || '';
+
+      let f = v.fecha ? (v.fecha.includes('T') ? v.fecha.split('T')[0] : v.fecha) : new Date().toISOString().split('T')[0];
+      document.getElementById('edit-venta-fecha').value = f;
+
+      const selCli = document.getElementById('edit-venta-cliente');
+      selCli.innerHTML = '';
+      clientesGlobales.forEach(c => {
+        selCli.innerHTML += `<option value="${c.nombre}" ${c.nombre === v.cliente_nombre ? 'selected' : ''}>${c.nombre}</option>`;
+      });
+
+      const selProd = document.getElementById('edit-venta-producto');
+      selProd.innerHTML = '';
+      productosGlobales.forEach(p => {
+        selProd.innerHTML += `<option value="${p.nombre}" ${p.nombre === v.producto_nombre ? 'selected' : ''}>${p.nombre}</option>`;
+      });
+
+      document.getElementById('edit-venta-packs').value = v.cantidad_packs || 0;
+      document.getElementById('edit-venta-total').value = v.monto_total || 0;
+      document.getElementById('edit-venta-pago').value = v.metodo_pago || 'efectivo';
+
+      document.getElementById('modal-editar-venta').classList.remove('hidden');
+    }
+
+    function cerrarModalEditarVenta() {
+      document.getElementById('modal-editar-venta').classList.add('hidden');
+    }
+
+    async function guardarEdicionVenta() {
+      const id = document.getElementById('edit-venta-id').value;
+      const fecha = document.getElementById('edit-venta-fecha').value;
+      const cliente = document.getElementById('edit-venta-cliente').value;
+      const producto = document.getElementById('edit-venta-producto').value;
+      const packsNuevos = Number(document.getElementById('edit-venta-packs').value || 0);
+      const packsOriginales = Number(document.getElementById('edit-venta-packs-original').value || 0);
+      const total = Number(document.getElementById('edit-venta-total').value || 0);
+      const pago = document.getElementById('edit-venta-pago').value;
+
+      if (!fecha || !cliente || !producto || packsNuevos <= 0 || total <= 0) {
+        return alert('Completá todos los campos correctamente.');
+      }
+
+      // Actualizar registro de venta
+      const { error } = await db.from('ventas').update({
+        fecha: fecha,
+        cliente_nombre: cliente,
+        producto_nombre: producto,
+        cantidad_packs: packsNuevos,
+        monto_total: total,
+        metodo_pago: pago
+      }).eq('id', id);
+
+      if (error) return alert('Error al actualizar venta: ' + error.message);
+
+      // Si cambió la cantidad de packs, ajustamos la diferencia en el stock del producto
+      const diferencia = packsOriginales - packsNuevos;
+      if (diferencia !== 0) {
+        const prod = productosGlobales.find(p => p.nombre === producto);
+        if (prod) {
+          await db.from('productos').update({
+            stock_packs: prod.stock_packs + diferencia
+          }).eq('id', prod.id);
+        }
+      }
+
+      cerrarModalEditarVenta();
+      mostrarNotificacion('¡Venta actualizada con éxito!');
+      cargarTodo();
     }
 
     // 5. GUARDAR Y CARGAR COMPRAS
@@ -712,14 +911,15 @@
 
       if (error) {
         console.error('Error Supabase al cargar compras:', error);
-        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-400 font-semibold">Error Supabase: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-400 font-semibold">Error Supabase: ${error.message}</td></tr>`;
         return;
       }
 
+      comprasGlobales = compras || [];
       tbody.innerHTML = '';
 
       if (!compras || compras.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500">No hay compras registradas aún.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-500">No hay compras registradas aún.</td></tr>';
         return;
       }
 
@@ -739,9 +939,81 @@
             <td class="p-2.5 text-cyan-400">${packs} packs</td>
             <td class="p-2.5 text-right font-bold text-emerald-400">$ ${total.toLocaleString()}</td>
             <td class="p-2.5 text-right text-violet-400">$ ${costoPack}</td>
+            <td class="p-2.5 text-center">
+              <button onclick="abrirModalEditarCompra(${c.id})" class="text-blue-400 hover:text-blue-300 p-1 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+            </td>
           </tr>
         `;
       });
+    }
+
+    // MODAL EDICIÓN COMPRA
+    function abrirModalEditarCompra(id) {
+      const c = comprasGlobales.find(item => item.id === id);
+      if (!c) return;
+
+      document.getElementById('edit-compra-id').value = c.id;
+      document.getElementById('edit-compra-packs-original').value = c.cantidad_packs || 0;
+      document.getElementById('edit-compra-prod-original').value = c.producto_nombre || '';
+
+      let f = c.fecha ? (c.fecha.includes('T') ? c.fecha.split('T')[0] : c.fecha) : new Date().toISOString().split('T')[0];
+      document.getElementById('edit-compra-fecha').value = f;
+
+      const selProd = document.getElementById('edit-compra-producto');
+      selProd.innerHTML = '';
+      productosGlobales.forEach(p => {
+        selProd.innerHTML += `<option value="${p.nombre}" ${p.nombre === c.producto_nombre ? 'selected' : ''}>${p.nombre}</option>`;
+      });
+
+      document.getElementById('edit-compra-packs').value = c.cantidad_packs || 0;
+      document.getElementById('edit-compra-costo').value = c.costo_total || 0;
+
+      document.getElementById('modal-editar-compra').classList.remove('hidden');
+    }
+
+    function cerrarModalEditarCompra() {
+      document.getElementById('modal-editar-compra').classList.add('hidden');
+    }
+
+    async function guardarEdicionCompra() {
+      const id = document.getElementById('edit-compra-id').value;
+      const fecha = document.getElementById('edit-compra-fecha').value;
+      const producto = document.getElementById('edit-compra-producto').value;
+      const packsNuevos = Number(document.getElementById('edit-compra-packs').value || 0);
+      const packsOriginales = Number(document.getElementById('edit-compra-packs-original').value || 0);
+      const costo = Number(document.getElementById('edit-compra-costo').value || 0);
+
+      if (!fecha || !producto || packsNuevos <= 0 || costo <= 0) {
+        return alert('Completá todos los campos correctamente.');
+      }
+
+      // Actualizar registro de compra
+      const { error } = await db.from('compras').update({
+        fecha: fecha,
+        producto_nombre: producto,
+        cantidad_packs: packsNuevos,
+        costo_total: costo
+      }).eq('id', id);
+
+      if (error) return alert('Error al actualizar compra: ' + error.message);
+
+      // Ajustar stock por la diferencia ingresada
+      const diferencia = packsNuevos - packsOriginales;
+      const costoUnitario = Number((costo / packsNuevos).toFixed(2));
+
+      const prod = productosGlobales.find(p => p.nombre === producto);
+      if (prod) {
+        await db.from('productos').update({
+          stock_packs: prod.stock_packs + diferencia,
+          precio_costo_pack: costoUnitario
+        }).eq('id', prod.id);
+      }
+
+      cerrarModalEditarCompra();
+      mostrarNotificacion('¡Compra actualizada con éxito!');
+      cargarTodo();
     }
 
     // 6. CLIENTES (ALTA, CARGA Y EDICIÓN)
@@ -824,7 +1096,7 @@
       document.getElementById('metric-por-cobrar').textContent = `$ ${totalDeuda.toLocaleString()}`;
     }
 
-    // MODAL DE EDICIÓN DE CLIENTE
+    // MODAL EDICIÓN CLIENTE
     function abrirModalEditar(clienteId) {
       const c = clientesGlobales.find(item => item.id === clienteId);
       if (!c) return;
@@ -853,7 +1125,6 @@
 
       if (!nombre) return alert('El nombre no puede quedar vacío.');
 
-      // 1. Actualizar cliente
       const { error: errCli } = await db.from('clientes').update({
         nombre: nombre,
         direccion: direccion,
@@ -863,7 +1134,6 @@
 
       if (errCli) return alert('Error al actualizar cliente: ' + errCli.message);
 
-      // 2. Si se modificó el nombre, actualizar las ventas históricas asociadas
       if (nombre !== nombreOriginal) {
         await db.from('ventas').update({ cliente_nombre: nombre }).eq('cliente_nombre', nombreOriginal);
       }
