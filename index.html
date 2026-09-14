@@ -40,28 +40,107 @@
 
   <main class="p-4 max-w-lg mx-auto">
 
-    <!-- PESTAÑA 1: INICIO (Métricas y resumen de stock) -->
-    <div id="tab-inicio" class="tab-content active space-y-6">
+    <!-- PESTAÑA 1: INICIO (TABLERO FINANCIERO Y CONTROL DE GANANCIAS) -->
+    <div id="tab-inicio" class="tab-content active space-y-5">
       
-      <!-- Métricas del día -->
-      <section class="grid grid-cols-2 gap-3">
-        <div class="glass-card p-4 rounded-2xl">
-          <span class="text-xs text-slate-400 font-medium">Ventas de Hoy</span>
-          <div class="text-xl font-bold text-emerald-400 mt-1" id="metric-ventas-hoy">$ 0</div>
-          <span class="text-[10px] text-emerald-500/80">Pedidos realizados hoy</span>
+      <!-- Selector de Período Temporal -->
+      <section class="flex bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+        <button onclick="cambiarPeriodo('hoy', this)" class="periodo-btn active flex-1 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white transition-all">
+          Hoy
+        </button>
+        <button onclick="cambiarPeriodo('semana', this)" class="periodo-btn flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition-all">
+          7 Días
+        </button>
+        <button onclick="cambiarPeriodo('mes', this)" class="periodo-btn flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition-all">
+          Este Mes
+        </button>
+        <button onclick="cambiarPeriodo('todo', this)" class="periodo-btn flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition-all">
+          Histórico
+        </button>
+      </section>
+
+      <!-- Tarjeta Principal: Ganancia Neta Real -->
+      <section class="glass-card p-5 rounded-2xl border border-emerald-500/40 relative overflow-hidden shadow-xl">
+        <div class="absolute -right-6 -bottom-6 w-28 h-28 bg-emerald-500/10 rounded-full blur-xl pointer-events-none"></div>
+        <div class="flex justify-between items-start">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-wallet"></i> Ganancia Neta Real
+            </span>
+            <p class="text-[11px] text-slate-400 mt-0.5">Plata limpia tras reponer stock y gastos</p>
+          </div>
+          <span id="badge-margen-neto" class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            0% Margen
+          </span>
         </div>
-        <div class="glass-card p-4 rounded-2xl">
-          <span class="text-xs text-slate-400 font-medium">Por Cobrar (Cta Cte)</span>
-          <div class="text-xl font-bold text-amber-400 mt-1" id="metric-por-cobrar">$ 0</div>
-          <span class="text-[10px] text-amber-500/80">Total en la calle</span>
+        <div class="text-3xl font-extrabold text-emerald-400 mt-3" id="metric-ganancia-neta">
+          $ 0
         </div>
       </section>
 
-      <!-- Stock Disponible para Vender -->
+      <!-- Desglose Financiero -->
+      <section class="grid grid-cols-2 gap-3">
+        
+        <!-- Facturación Total -->
+        <div class="glass-card p-3.5 rounded-xl border border-slate-800">
+          <div class="flex items-center justify-between text-slate-400 text-xs">
+            <span>Facturación</span>
+            <i class="fa-solid fa-arrow-trend-up text-blue-400"></i>
+          </div>
+          <div class="text-lg font-bold text-slate-100 mt-1" id="metric-ventas-totales">$ 0</div>
+          <span class="text-[10px] text-slate-400" id="metric-ventas-cant">0 bultos vendidos</span>
+        </div>
+
+        <!-- Costo de Mercadería -->
+        <div class="glass-card p-3.5 rounded-xl border border-slate-800">
+          <div class="flex items-center justify-between text-slate-400 text-xs">
+            <span>Costo Stock</span>
+            <i class="fa-solid fa-boxes-packing text-indigo-400"></i>
+          </div>
+          <div class="text-lg font-bold text-slate-300 mt-1" id="metric-costo-mercaderia">$ 0</div>
+          <span class="text-[10px] text-slate-400">Costo de reposición</span>
+        </div>
+
+        <!-- Ganancia Bruta -->
+        <div class="glass-card p-3.5 rounded-xl border border-slate-800">
+          <div class="flex items-center justify-between text-slate-400 text-xs">
+            <span>Ganancia Bruta</span>
+            <i class="fa-solid fa-chart-pie text-teal-400"></i>
+          </div>
+          <div class="text-lg font-bold text-teal-400 mt-1" id="metric-ganancia-bruta">$ 0</div>
+          <span class="text-[10px] text-slate-400">Ventas menos costo stock</span>
+        </div>
+
+        <!-- Gastos Operativos -->
+        <div class="glass-card p-3.5 rounded-xl border border-slate-800">
+          <div class="flex items-center justify-between text-slate-400 text-xs">
+            <span>Gastos Flete/Día</span>
+            <i class="fa-solid fa-gas-pump text-amber-400"></i>
+          </div>
+          <div class="text-lg font-bold text-amber-400 mt-1" id="metric-gastos-totales">$ 0</div>
+          <span class="text-[10px] text-slate-400">Nafta, peajes y varios</span>
+        </div>
+
+      </section>
+
+      <!-- Indicador de Liquidez (Cuentas por Cobrar) -->
+      <section class="glass-card p-3.5 rounded-xl border border-amber-500/20 flex justify-between items-center">
+        <div>
+          <span class="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+            <i class="fa-solid fa-receipt text-amber-400"></i> Cuentas Corrientes (Fiado en Calle)
+          </span>
+          <p class="text-[11px] text-slate-500">Capital que falta cobrar a supermercados</p>
+        </div>
+        <div class="text-right">
+          <div class="text-base font-bold text-amber-400" id="metric-por-cobrar">$ 0</div>
+        </div>
+      </section>
+
+      <!-- Stock Disponible para la Venta -->
       <section>
         <div class="flex justify-between items-center mb-3">
           <h2 class="text-sm font-semibold text-slate-300">
-            <i class="fa-solid fa-boxes-stacked text-blue-400 mr-1.5"></i> Stock Disponible
+            <i class="fa-solid fa-boxes-stacked text-blue-400 mr-1.5"></i> Stock Disponible en Camión
           </h2>
         </div>
         <div class="space-y-2.5" id="lista-stock-inicio">
@@ -74,7 +153,6 @@
     <!-- PESTAÑA 2: VENTAS (Formulario Venta + Historial) -->
     <div id="tab-ventas" class="tab-content space-y-6">
       
-      <!-- Formulario Venta Rápida -->
       <section class="glass-card p-4 rounded-2xl border border-emerald-500/30">
         <h2 class="text-base font-bold text-white mb-4 flex items-center">
           <i class="fa-solid fa-cart-plus text-emerald-400 mr-2"></i> Nueva Venta
@@ -138,7 +216,6 @@
         </form>
       </section>
 
-      <!-- TABLA HISTORIAL DE VENTAS -->
       <section>
         <h2 class="text-sm font-semibold text-slate-300 mb-3 flex items-center">
           <i class="fa-solid fa-clock-rotate-left text-emerald-400 mr-2"></i> Historial de Ventas
@@ -170,7 +247,6 @@
     <!-- PESTAÑA 3: STOCK Y COMPRAS -->
     <div id="tab-stock" class="tab-content space-y-6">
       
-      <!-- Formulario Carga de Stock -->
       <section class="glass-card p-4 rounded-2xl border border-blue-500/30">
         <h2 class="text-base font-bold text-white mb-4 flex items-center">
           <i class="fa-solid fa-truck-ramp-box text-blue-400 mr-2"></i> Cargar / Reponer Stock
@@ -223,7 +299,6 @@
         </form>
       </section>
 
-      <!-- TABLA HISTORIAL DE COMPRAS -->
       <section>
         <h2 class="text-sm font-semibold text-slate-300 mb-3 flex items-center">
           <i class="fa-solid fa-clock-rotate-left text-blue-400 mr-2"></i> Historial de Compras
@@ -251,10 +326,9 @@
 
     </div>
 
-    <!-- PESTAÑA 4: GASTOS OPERATIVOS (Formulario + Historial) -->
+    <!-- PESTAÑA 4: GASTOS OPERATIVOS -->
     <div id="tab-gastos" class="tab-content space-y-6">
       
-      <!-- Formulario Registrar Gasto -->
       <section class="glass-card p-4 rounded-2xl border border-amber-500/30">
         <h2 class="text-base font-bold text-white mb-4 flex items-center">
           <i class="fa-solid fa-gas-pump text-amber-400 mr-2"></i> Registrar Gasto del Día
@@ -292,7 +366,6 @@
         </form>
       </section>
 
-      <!-- TABLA HISTORIAL DE GASTOS -->
       <section>
         <h2 class="text-sm font-semibold text-slate-300 mb-3 flex items-center">
           <i class="fa-solid fa-clock-rotate-left text-amber-400 mr-2"></i> Historial de Gastos
@@ -322,7 +395,6 @@
     <!-- PESTAÑA 5: CLIENTES Y DIRECTORIO -->
     <div id="tab-clientes" class="tab-content space-y-6">
       
-      <!-- Formulario Nuevo Cliente -->
       <section class="glass-card p-4 rounded-2xl border border-blue-500/30">
         <h2 class="text-base font-bold text-white mb-4 flex items-center">
           <i class="fa-solid fa-user-plus text-blue-400 mr-2"></i> Registrar Nuevo Cliente
@@ -355,7 +427,6 @@
         </form>
       </section>
 
-      <!-- Tabla Listado Completo de Clientes -->
       <section>
         <h2 class="text-sm font-semibold text-slate-300 mb-3 flex items-center">
           <i class="fa-solid fa-users text-emerald-400 mr-2"></i> Directorio de Clientes
@@ -385,25 +456,24 @@
 
   </main>
 
-  <!-- MODAL PARA EDITAR CLIENTE -->
+  <!-- MODALES DE EDICIÓN (CLIENTES, VENTAS, COMPRAS, GASTOS) -->
+
+  <!-- Modal Cliente -->
   <div id="modal-editar-cliente" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-md p-5 rounded-2xl border border-blue-500/40 shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
         <h3 class="text-base font-bold text-white flex items-center">
-          <i class="fa-solid fa-user-pen text-blue-400 mr-2"></i> Editar Datos de Cliente
+          <i class="fa-solid fa-user-pen text-blue-400 mr-2"></i> Editar Cliente
         </h3>
         <button onclick="cerrarModalEditar()" class="text-slate-400 hover:text-white text-lg">✕</button>
       </div>
-
       <input type="hidden" id="edit-cliente-id">
       <input type="hidden" id="edit-cliente-nombre-original">
-
       <div class="space-y-3">
         <div>
-          <label class="block text-xs text-slate-400 mb-1">Nombre / Razón Social</label>
-          <input type="text" id="edit-cliente-nombre" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+          <label class="block text-xs text-slate-400 mb-1">Nombre</label>
+          <input type="text" id="edit-cliente-nombre" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
         </div>
-
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs text-slate-400 mb-1">Dirección</label>
@@ -414,25 +484,19 @@
             <input type="text" id="edit-cliente-localidad" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
           </div>
         </div>
-
         <div>
           <label class="block text-xs text-slate-400 mb-1">Teléfono</label>
           <input type="text" id="edit-cliente-telefono" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
         </div>
       </div>
-
       <div class="flex space-x-3 pt-2">
-        <button type="button" onclick="cerrarModalEditar()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl">
-          Cancelar
-        </button>
-        <button type="button" onclick="guardarEdicionCliente()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg">
-          Guardar Cambios
-        </button>
+        <button type="button" onclick="cerrarModalEditar()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl">Cancelar</button>
+        <button type="button" onclick="guardarEdicionCliente()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg">Guardar</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL PARA EDITAR VENTA -->
+  <!-- Modal Venta -->
   <div id="modal-editar-venta" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-md p-5 rounded-2xl border border-emerald-500/40 shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -441,27 +505,22 @@
         </h3>
         <button onclick="cerrarModalEditarVenta()" class="text-slate-400 hover:text-white text-lg">✕</button>
       </div>
-
       <input type="hidden" id="edit-venta-id">
       <input type="hidden" id="edit-venta-packs-original">
       <input type="hidden" id="edit-venta-prod-original">
-
       <div class="space-y-3">
         <div>
           <label class="block text-xs text-slate-400 mb-1">Fecha</label>
-          <input type="date" id="edit-venta-fecha" class="w-full max-w-full box-border appearance-none bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+          <input type="date" id="edit-venta-fecha" class="w-full max-w-full box-border appearance-none bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
         </div>
-
         <div>
           <label class="block text-xs text-slate-400 mb-1">Cliente</label>
           <select id="edit-venta-cliente" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none"></select>
         </div>
-
         <div>
           <label class="block text-xs text-slate-400 mb-1">Producto</label>
           <select id="edit-venta-producto" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none"></select>
         </div>
-
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs text-slate-400 mb-1">Cantidad Bultos</label>
@@ -472,7 +531,6 @@
             <input type="number" id="edit-venta-total" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm font-bold text-emerald-400 focus:outline-none">
           </div>
         </div>
-
         <div>
           <label class="block text-xs text-slate-400 mb-1">Forma de Pago</label>
           <select id="edit-venta-pago" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
@@ -482,19 +540,14 @@
           </select>
         </div>
       </div>
-
       <div class="flex space-x-3 pt-2">
-        <button type="button" onclick="cerrarModalEditarVenta()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl">
-          Cancelar
-        </button>
-        <button type="button" onclick="guardarEdicionVenta()" class="w-1/2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg">
-          Guardar Cambios
-        </button>
+        <button type="button" onclick="cerrarModalEditarVenta()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl">Cancelar</button>
+        <button type="button" onclick="guardarEdicionVenta()" class="w-1/2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg">Guardar</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL PARA EDITAR COMPRA -->
+  <!-- Modal Compra -->
   <div id="modal-editar-compra" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-md p-5 rounded-2xl border border-blue-500/40 shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -503,22 +556,18 @@
         </h3>
         <button onclick="cerrarModalEditarCompra()" class="text-slate-400 hover:text-white text-lg">✕</button>
       </div>
-
       <input type="hidden" id="edit-compra-id">
       <input type="hidden" id="edit-compra-packs-original">
       <input type="hidden" id="edit-compra-prod-original">
-
       <div class="space-y-3">
         <div>
           <label class="block text-xs text-slate-400 mb-1">Fecha</label>
-          <input type="date" id="edit-compra-fecha" class="w-full max-w-full box-border appearance-none bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+          <input type="date" id="edit-compra-fecha" class="w-full max-w-full box-border appearance-none bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
         </div>
-
         <div>
           <label class="block text-xs text-slate-400 mb-1">Producto</label>
           <select id="edit-compra-producto" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none"></select>
         </div>
-
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs text-slate-400 mb-1">Cantidad Bultos</label>
@@ -530,19 +579,14 @@
           </div>
         </div>
       </div>
-
       <div class="flex space-x-3 pt-2">
-        <button type="button" onclick="cerrarModalEditarCompra()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl">
-          Cancelar
-        </button>
-        <button type="button" onclick="guardarEdicionCompra()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg">
-          Guardar Cambios
-        </button>
+        <button type="button" onclick="cerrarModalEditarCompra()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl">Cancelar</button>
+        <button type="button" onclick="guardarEdicionCompra()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg">Guardar</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL PARA EDITAR GASTO -->
+  <!-- Modal Gasto -->
   <div id="modal-editar-gasto" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-md p-5 rounded-2xl border border-amber-500/40 shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -551,15 +595,12 @@
         </h3>
         <button onclick="cerrarModalEditarGasto()" class="text-slate-400 hover:text-white text-lg">✕</button>
       </div>
-
       <input type="hidden" id="edit-gasto-id">
-
       <div class="space-y-3">
         <div>
           <label class="block text-xs text-slate-400 mb-1">Fecha</label>
-          <input type="date" id="edit-gasto-fecha" class="w-full max-w-full box-border appearance-none bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500">
+          <input type="date" id="edit-gasto-fecha" class="w-full max-w-full box-border appearance-none bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
         </div>
-
         <div>
           <label class="block text-xs text-slate-400 mb-1">Tipo de Gasto</label>
           <select id="edit-gasto-categoria" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
@@ -570,25 +611,18 @@
             <option value="otros">📦 Otros Gastos</option>
           </select>
         </div>
-
         <div>
           <label class="block text-xs text-slate-400 mb-1">Monto ($)</label>
           <input type="number" id="edit-gasto-monto" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm font-bold text-amber-400 focus:outline-none">
         </div>
-
         <div>
           <label class="block text-xs text-slate-400 mb-1">Detalle / Notas</label>
           <input type="text" id="edit-gasto-descripcion" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
         </div>
       </div>
-
       <div class="flex space-x-3 pt-2">
-        <button type="button" onclick="cerrarModalEditarGasto()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl">
-          Cancelar
-        </button>
-        <button type="button" onclick="guardarEdicionGasto()" class="w-1/2 bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-xl shadow-lg">
-          Guardar Cambios
-        </button>
+        <button type="button" onclick="cerrarModalEditarGasto()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl">Cancelar</button>
+        <button type="button" onclick="guardarEdicionGasto()" class="w-1/2 bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-xl shadow-lg">Guardar</button>
       </div>
     </div>
   </div>
@@ -628,6 +662,7 @@
     let ventasGlobales = [];
     let comprasGlobales = [];
     let gastosGlobales = [];
+    let periodoSeleccionado = 'hoy'; // 'hoy', 'semana', 'mes', 'todo'
 
     document.addEventListener('DOMContentLoaded', () => {
       const hoy = new Date().toISOString().split('T')[0];
@@ -657,7 +692,7 @@
       await cargarHistorialCompras();
       await cargarHistorialGastos();
       await cargarClientes();
-      await cargarMetricasYVentas();
+      calcularMetricasFinancieras();
     }
 
     // 2. CAMBIO DE PESTAÑAS
@@ -691,7 +726,96 @@
       }
     }
 
-    // 3. LEER PRODUCTOS
+    // 3. CAMBIO DE PERÍODO TEMPORAL
+    function cambiarPeriodo(periodo, btn) {
+      periodoSeleccionado = periodo;
+      document.querySelectorAll('.periodo-btn').forEach(b => {
+        b.classList.remove('bg-blue-600', 'text-white');
+        b.classList.add('text-slate-400');
+      });
+      btn.classList.add('bg-blue-600', 'text-white');
+      btn.classList.remove('text-slate-400');
+      calcularMetricasFinancieras();
+    }
+
+    // 4. MOTOR DE CÁLCULO FINANCIERO (GANANCIA NETA, BRUTA, CMV, GASTOS)
+    function calcularMetricasFinancieras() {
+      const hoy = new Date();
+      const hoyStr = hoy.toISOString().split('T')[0];
+      
+      // Fecha límite para 'semana' (hace 7 días)
+      const hace7Dias = new Date();
+      hace7Dias.setDate(hoy.getDate() - 7);
+      const hace7DiasStr = hace7Dias.toISOString().split('T')[0];
+
+      // Mes actual 'YYYY-MM'
+      const mesActualStr = hoyStr.substring(0, 7);
+
+      // Filtro de fecha
+      function coincidePeriodo(fechaRegistro) {
+        if (!fechaRegistro) return false;
+        const f = fechaRegistro.includes('T') ? fechaRegistro.split('T')[0] : fechaRegistro;
+
+        if (periodoSeleccionado === 'hoy') return f === hoyStr;
+        if (periodoSeleccionado === 'semana') return f >= hace7DiasStr && f <= hoyStr;
+        if (periodoSeleccionado === 'mes') return f.startsWith(mesActualStr);
+        if (periodoSeleccionado === 'todo') return true;
+        return true;
+      }
+
+      // 1. Filtrar ventas del período
+      const ventasPeriodo = ventasGlobales.filter(v => coincidePeriodo(v.fecha || v.created_at));
+
+      // 2. Mapear costos unitarios por producto
+      const mapaCostos = {};
+      productosGlobales.forEach(p => {
+        mapaCostos[p.nombre] = Number(p.precio_costo_pack || 0);
+      });
+
+      let ventasTotales = 0;
+      let costoMercaderiaVendida = 0;
+      let cantidadBultosVendidos = 0;
+
+      ventasPeriodo.forEach(v => {
+        const monto = Number(v.monto_total || 0);
+        const bultos = Number(v.cantidad_packs || 0);
+        const costoUnitario = mapaCostos[v.producto_nombre] || 0;
+
+        ventasTotales += monto;
+        costoMercaderiaVendida += (bultos * costoUnitario);
+        cantidadBultosVendidos += bultos;
+      });
+
+      // 3. Filtrar gastos del período
+      const gastosPeriodo = gastosGlobales.filter(g => coincidePeriodo(g.fecha || g.created_at));
+      const gastosTotales = gastosPeriodo.reduce((acc, g) => acc + Number(g.monto || 0), 0);
+
+      // 4. Ganancia Bruta y Ganancia Neta
+      const gananciaBruta = ventasTotales - costoMercaderiaVendida;
+      const gananciaNeta = gananciaBruta - gastosTotales;
+
+      // 5. Margen Neto %
+      const margenNeto = ventasTotales > 0 ? ((gananciaNeta / ventasTotales) * 100).toFixed(1) : 0;
+
+      // Volcar resultados a la pantalla
+      document.getElementById('metric-ganancia-neta').textContent = `$ ${Math.round(gananciaNeta).toLocaleString()}`;
+      document.getElementById('badge-margen-neto').textContent = `${margenNeto}% Margen`;
+
+      // Si la ganancia neta es negativa, pintar en rojo
+      if (gananciaNeta < 0) {
+        document.getElementById('metric-ganancia-neta').className = "text-3xl font-extrabold text-rose-400 mt-3";
+      } else {
+        document.getElementById('metric-ganancia-neta').className = "text-3xl font-extrabold text-emerald-400 mt-3";
+      }
+
+      document.getElementById('metric-ventas-totales').textContent = `$ ${Math.round(ventasTotales).toLocaleString()}`;
+      document.getElementById('metric-ventas-cant').textContent = `${cantidadBultosVendidos} bultos vendidos`;
+      document.getElementById('metric-costo-mercaderia').textContent = `$ ${Math.round(costoMercaderiaVendida).toLocaleString()}`;
+      document.getElementById('metric-ganancia-bruta').textContent = `$ ${Math.round(gananciaBruta).toLocaleString()}`;
+      document.getElementById('metric-gastos-totales').textContent = `$ ${Math.round(gastosTotales).toLocaleString()}`;
+    }
+
+    // 5. LEER PRODUCTOS
     async function cargarProductos() {
       const { data: productos, error } = await db.from('productos').select('*');
       if (error) console.error('Error al cargar productos:', error);
@@ -724,7 +848,7 @@
               <div class="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-lg">🥤</div>
               <div>
                 <div class="font-semibold text-sm">${p.nombre}</div>
-                <div class="text-xs text-slate-400">${pPorPallet} bultos x pallet</div>
+                <div class="text-xs text-slate-400">${pPorPallet} bultos x pallet • Costo: $${p.precio_costo_pack || 0}</div>
               </div>
             </div>
             <div class="text-right">
@@ -739,7 +863,7 @@
       });
     }
 
-    // 4. GUARDAR VENTA & CARGAR HISTORIAL DE VENTAS
+    // 6. GUARDAR VENTA & CARGAR HISTORIAL DE VENTAS
     async function guardarVenta() {
       const fechaVenta = document.getElementById('input-venta-fecha').value || new Date().toISOString().split('T')[0];
       let clienteNombre = document.getElementById('select-cliente').value;
@@ -924,7 +1048,7 @@
       cargarTodo();
     }
 
-    // 5. GUARDAR Y CARGAR COMPRAS
+    // 7. GUARDAR Y CARGAR COMPRAS
     async function guardarCompra() {
       const fechaCompra = document.getElementById('input-compra-fecha').value || new Date().toISOString().split('T')[0];
       let productoId = document.getElementById('select-compra-producto').value;
@@ -1102,7 +1226,7 @@
       cargarTodo();
     }
 
-    // 6. GASTOS (ALTA, CARGA Y EDICIÓN)
+    // 8. GASTOS (ALTA, CARGA Y EDICIÓN)
     async function guardarGasto() {
       const fechaGasto = document.getElementById('input-gasto-fecha').value || new Date().toISOString().split('T')[0];
       const categoria = document.getElementById('select-gasto-categoria').value;
@@ -1226,7 +1350,7 @@
       cargarTodo();
     }
 
-    // 7. CLIENTES (ALTA, CARGA Y EDICIÓN)
+    // 9. CLIENTES (ALTA, CARGA Y EDICIÓN)
     async function guardarClienteDirectorio() {
       const nombre = document.getElementById('input-cliente-nombre').value.trim();
       const direccion = document.getElementById('input-cliente-direccion').value.trim();
@@ -1351,18 +1475,6 @@
       cerrarModalEditar();
       mostrarNotificacion('¡Cliente actualizado con éxito!');
       cargarTodo();
-    }
-
-    // 8. MÉTRICAS
-    async function cargarMetricasYVentas() {
-      const { data: ventas } = await db.from('ventas').select('*');
-      if (!ventas) return;
-
-      const hoy = new Date().toISOString().split('T')[0];
-      const ventasHoy = ventas.filter(v => (v.fecha && v.fecha.startsWith(hoy)) || (v.created_at && v.created_at.startsWith(hoy)));
-      const totalHoy = ventasHoy.reduce((acc, v) => acc + Number(v.monto_total), 0);
-
-      document.getElementById('metric-ventas-hoy').textContent = `$ ${totalHoy.toLocaleString()}`;
     }
   </script>
 </body>
