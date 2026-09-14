@@ -332,11 +332,12 @@
                 <th class="p-2.5">Localidad</th>
                 <th class="p-2.5">Teléfono</th>
                 <th class="p-2.5 text-right">Ventas Acum.</th>
+                <th class="p-2.5 text-center">Acción</th>
               </tr>
             </thead>
             <tbody id="tabla-listado-clientes" class="divide-y divide-slate-800 text-slate-200">
               <tr>
-                <td colspan="5" class="p-4 text-center text-slate-500">Cargando clientes...</td>
+                <td colspan="6" class="p-4 text-center text-slate-500">Cargando clientes...</td>
               </tr>
             </tbody>
           </table>
@@ -346,6 +347,53 @@
     </div>
 
   </main>
+
+  <!-- MODAL PARA EDITAR CLIENTE -->
+  <div id="modal-editar-cliente" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-md p-5 rounded-2xl border border-blue-500/40 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white flex items-center">
+          <i class="fa-solid fa-user-pen text-blue-400 mr-2"></i> Editar Datos de Cliente
+        </h3>
+        <button onclick="cerrarModalEditar()" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+
+      <input type="hidden" id="edit-cliente-id">
+      <input type="hidden" id="edit-cliente-nombre-original">
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Nombre / Razón Social</label>
+          <input type="text" id="edit-cliente-nombre" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Dirección</label>
+            <input type="text" id="edit-cliente-direccion" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Localidad</label>
+            <input type="text" id="edit-cliente-localidad" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Teléfono</label>
+          <input type="text" id="edit-cliente-telefono" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
+        </div>
+      </div>
+
+      <div class="flex space-x-3 pt-2">
+        <button type="button" onclick="cerrarModalEditar()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl">
+          Cancelar
+        </button>
+        <button type="button" onclick="guardarEdicionCliente()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg">
+          Guardar Cambios
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- NAVEGACIÓN INFERIOR (5 PESTAÑAS) -->
   <nav class="fixed bottom-0 left-0 right-0 bg-slate-900/95 border-t border-slate-800 p-2 flex justify-around items-center backdrop-blur z-50 max-w-lg mx-auto">
@@ -372,10 +420,12 @@
   </nav>
 
   <script>
-    // 1. CONEXIÓN A SUPABASE
+    // 1. CONEXIÓN A SUPABASE (Nuevas credenciales)
     const SUPABASE_URL = 'https://rydmmhiqsnvbbhklzyfb.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_N2gBPvn7Msh-TN49QkuxTQ_qendCCbC';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let clientesGlobales = [];
 
     document.addEventListener('DOMContentLoaded', () => {
       const hoy = new Date().toISOString().split('T')[0];
@@ -694,7 +744,7 @@
       });
     }
 
-    // 6. GUARDAR CLIENTE (FORMULARIO PESTAÑA CLIENTES)
+    // 6. CLIENTES (ALTA, CARGA Y EDICIÓN)
     async function guardarClienteDirectorio() {
       const nombre = document.getElementById('input-cliente-nombre').value.trim();
       const direccion = document.getElementById('input-cliente-direccion').value.trim();
@@ -717,11 +767,12 @@
       cargarTodo();
     }
 
-    // 7. CARGAR TABLA CLIENTES (CON VENTAS ACUMULADAS)
     async function cargarClientes() {
       const { data: clientes, error: errC } = await db.from('clientes').select('*');
       const { data: ventas, error: errV } = await db.from('ventas').select('cliente_nombre, monto_total');
       if (errC) return console.error('Error clientes:', errC);
+
+      clientesGlobales = clientes || [];
 
       const selectCliente = document.getElementById('select-cliente');
       const tbodyClientes = document.getElementById('tabla-listado-clientes');
@@ -732,7 +783,6 @@
       `;
       tbodyClientes.innerHTML = '';
 
-      // Acumulador de ventas por cliente
       const ventasPorCliente = {};
       if (ventas) {
         ventas.forEach(v => {
@@ -744,7 +794,7 @@
       let totalDeuda = 0;
 
       if (!clientes || clientes.length === 0) {
-        tbodyClientes.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500">No hay clientes registrados aún.</td></tr>';
+        tbodyClientes.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-500">No hay clientes registrados aún.</td></tr>';
         document.getElementById('metric-por-cobrar').textContent = '$ 0';
         return;
       }
@@ -762,6 +812,11 @@
             <td class="p-2.5 text-slate-300">${c.localidad || '-'}</td>
             <td class="p-2.5 text-slate-400">${c.telefono || '-'}</td>
             <td class="p-2.5 text-right font-bold text-emerald-400">$ ${acumuladoVentas.toLocaleString()}</td>
+            <td class="p-2.5 text-center">
+              <button onclick="abrirModalEditar(${c.id})" class="text-blue-400 hover:text-blue-300 p-1 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+            </td>
           </tr>
         `;
       });
@@ -769,7 +824,56 @@
       document.getElementById('metric-por-cobrar').textContent = `$ ${totalDeuda.toLocaleString()}`;
     }
 
-    // 8. GASTOS
+    // MODAL DE EDICIÓN DE CLIENTE
+    function abrirModalEditar(clienteId) {
+      const c = clientesGlobales.find(item => item.id === clienteId);
+      if (!c) return;
+
+      document.getElementById('edit-cliente-id').value = c.id;
+      document.getElementById('edit-cliente-nombre-original').value = c.nombre;
+      document.getElementById('edit-cliente-nombre').value = c.nombre || '';
+      document.getElementById('edit-cliente-direccion').value = c.direccion || '';
+      document.getElementById('edit-cliente-localidad').value = c.localidad || '';
+      document.getElementById('edit-cliente-telefono').value = c.telefono || '';
+
+      document.getElementById('modal-editar-cliente').classList.remove('hidden');
+    }
+
+    function cerrarModalEditar() {
+      document.getElementById('modal-editar-cliente').classList.add('hidden');
+    }
+
+    async function guardarEdicionCliente() {
+      const id = document.getElementById('edit-cliente-id').value;
+      const nombreOriginal = document.getElementById('edit-cliente-nombre-original').value;
+      const nombre = document.getElementById('edit-cliente-nombre').value.trim();
+      const direccion = document.getElementById('edit-cliente-direccion').value.trim();
+      const localidad = document.getElementById('edit-cliente-localidad').value.trim();
+      const telefono = document.getElementById('edit-cliente-telefono').value.trim();
+
+      if (!nombre) return alert('El nombre no puede quedar vacío.');
+
+      // 1. Actualizar cliente
+      const { error: errCli } = await db.from('clientes').update({
+        nombre: nombre,
+        direccion: direccion,
+        localidad: localidad,
+        telefono: telefono
+      }).eq('id', id);
+
+      if (errCli) return alert('Error al actualizar cliente: ' + errCli.message);
+
+      // 2. Si se modificó el nombre, actualizar las ventas históricas asociadas
+      if (nombre !== nombreOriginal) {
+        await db.from('ventas').update({ cliente_nombre: nombre }).eq('cliente_nombre', nombreOriginal);
+      }
+
+      cerrarModalEditar();
+      mostrarNotificacion('¡Cliente actualizado con éxito!');
+      cargarTodo();
+    }
+
+    // 7. GASTOS
     async function guardarGasto() {
       const categoria = document.getElementById('select-gasto-categoria').value;
       const monto = Number(document.getElementById('input-gasto-monto').value || 0);
@@ -783,7 +887,7 @@
       document.getElementById('form-gasto').reset();
     }
 
-    // 9. MÉTRICAS
+    // 8. MÉTRICAS
     async function cargarMetricasYVentas() {
       const { data: ventas } = await db.from('ventas').select('*');
       if (!ventas) return;
