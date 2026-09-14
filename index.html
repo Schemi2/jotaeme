@@ -81,6 +81,12 @@
         </h2>
 
         <form id="form-venta" class="space-y-4">
+          <!-- Fecha de la Venta -->
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Fecha de la Venta</label>
+            <input type="date" id="input-venta-fecha" class="w-full max-w-full box-border appearance-none bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+          </div>
+
           <div>
             <label class="block text-xs text-slate-400 mb-1">Cliente / Supermercado</label>
             <select id="select-cliente" onchange="toggleNuevoCliente(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500">
@@ -321,7 +327,9 @@
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('input-compra-fecha').value = new Date().toISOString().split('T')[0];
+      const hoy = new Date().toISOString().split('T')[0];
+      document.getElementById('input-compra-fecha').value = hoy;
+      document.getElementById('input-venta-fecha').value = hoy;
       cargarTodo();
     });
 
@@ -426,6 +434,7 @@
 
     // 4. GUARDAR VENTA & CARGAR HISTORIAL DE VENTAS
     async function guardarVenta() {
+      const fechaVenta = document.getElementById('input-venta-fecha').value || new Date().toISOString().split('T')[0];
       let clienteNombre = document.getElementById('select-cliente').value;
       const nuevoCliente = document.getElementById('nombre-nuevo-cliente').value.trim();
       const productoId = document.getElementById('select-producto-venta').value;
@@ -454,6 +463,7 @@
       }
 
       await db.from('ventas').insert({
+        fecha: fechaVenta,
         cliente_nombre: clienteNombre,
         producto_nombre: prod.nombre,
         cantidad_packs: totalPacksVendidos,
@@ -472,6 +482,7 @@
 
       mostrarNotificacion('¡Venta registrada con éxito!');
       document.getElementById('form-venta').reset();
+      document.getElementById('input-venta-fecha').value = new Date().toISOString().split('T')[0];
       document.getElementById('campo-nuevo-cliente').classList.add('hidden');
       cargarTodo();
     }
@@ -493,10 +504,16 @@
         return;
       }
 
-      ventas.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      ventas.sort((a, b) => new Date(b.fecha || b.created_at || 0) - new Date(a.fecha || a.created_at || 0));
 
       ventas.forEach(v => {
-        const fechaFmt = v.created_at ? new Date(v.created_at).toLocaleDateString('es-AR') : '-';
+        let fechaFmt = '-';
+        if (v.fecha) {
+          fechaFmt = v.fecha.includes('T') ? v.fecha.split('T')[0] : v.fecha;
+        } else if (v.created_at) {
+          fechaFmt = new Date(v.created_at).toLocaleDateString('es-AR');
+        }
+
         const cliente = v.cliente_nombre || 'Cliente';
         const producto = v.producto_nombre || 'Producto';
         const packs = Number(v.cantidad_packs || 0);
@@ -701,7 +718,7 @@
       if (!ventas) return;
 
       const hoy = new Date().toISOString().split('T')[0];
-      const ventasHoy = ventas.filter(v => v.created_at && v.created_at.startsWith(hoy));
+      const ventasHoy = ventas.filter(v => (v.fecha && v.fecha.startsWith(hoy)) || (v.created_at && v.created_at.startsWith(hoy)));
       const totalHoy = ventasHoy.reduce((acc, v) => acc + Number(v.monto_total), 0);
 
       document.getElementById('metric-ventas-hoy').textContent = `$ ${totalHoy.toLocaleString()}`;
