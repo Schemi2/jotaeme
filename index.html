@@ -112,7 +112,7 @@
               <input type="number" id="input-pallets" placeholder="Ej: 1" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none">
             </div>
             <div>
-              <label class="block text-xs text-slate-400 mb-1">Packs sueltos</label>
+              <label class="block text-xs text-slate-400 mb-1">Bultos sueltos</label>
               <input type="number" id="input-packs" placeholder="Ej: 15" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none">
             </div>
           </div>
@@ -196,7 +196,7 @@
               <input type="text" id="input-nuevo-producto-nombre" placeholder="Ej: Manaos Cola 2.25L" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm">
             </div>
             <div>
-              <label class="block text-xs text-emerald-400 mb-1 font-medium">¿Cuántos packs trae cada Pallet?</label>
+              <label class="block text-xs text-emerald-400 mb-1 font-medium">¿Cuántos bultos trae cada Pallet?</label>
               <input type="number" id="input-nuevo-packs-pallet" placeholder="100" value="100" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm">
             </div>
           </div>
@@ -207,7 +207,7 @@
               <input type="number" id="input-compra-pallets" placeholder="0" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm">
             </div>
             <div>
-              <label class="block text-xs text-slate-400 mb-1">Packs sueltos</label>
+              <label class="block text-xs text-slate-400 mb-1">Bultos sueltos</label>
               <input type="number" id="input-compra-packs-sueltos" placeholder="0" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm">
             </div>
           </div>
@@ -236,7 +236,7 @@
                 <th class="p-2.5">Producto</th>
                 <th class="p-2.5">Cantidad</th>
                 <th class="p-2.5 text-right">Costo Total</th>
-                <th class="p-2.5 text-right">Costo x Pack</th>
+                <th class="p-2.5 text-right">Costo x Bulto</th>
                 <th class="p-2.5 text-center">Acción</th>
               </tr>
             </thead>
@@ -464,7 +464,7 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs text-slate-400 mb-1">Cantidad Packs</label>
+            <label class="block text-xs text-slate-400 mb-1">Cantidad Bultos</label>
             <input type="number" id="edit-venta-packs" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
           </div>
           <div>
@@ -521,7 +521,7 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs text-slate-400 mb-1">Cantidad Packs</label>
+            <label class="block text-xs text-slate-400 mb-1">Cantidad Bultos</label>
             <input type="number" id="edit-compra-packs" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
           </div>
           <div>
@@ -724,17 +724,17 @@
               <div class="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-lg">🥤</div>
               <div>
                 <div class="font-semibold text-sm">${p.nombre}</div>
-                <div class="text-xs text-slate-400">${pPorPallet} packs x pallet</div>
+                <div class="text-xs text-slate-400">${pPorPallet} bultos x pallet</div>
               </div>
             </div>
             <div class="text-right">
-              <div class="text-sm font-bold text-slate-100">${p.stock_packs} Packs</div>
+              <div class="text-sm font-bold text-slate-100">${p.stock_packs} Bultos</div>
               <div class="text-[11px] text-emerald-400 font-medium">~${pallets} Pallets</div>
             </div>
           </div>
         `;
 
-        selectVenta.innerHTML += `<option value="${p.id}">${p.nombre} (Stock: ${p.stock_packs} packs)</option>`;
+        selectVenta.innerHTML += `<option value="${p.id}">${p.nombre} (Stock: ${p.stock_packs} bultos)</option>`;
         selectCompra.insertAdjacentHTML('afterbegin', `<option value="${p.id}">${p.nombre}</option>`);
       });
     }
@@ -763,10 +763,10 @@
       const { data: prod } = await db.from('productos').select('*').eq('id', productoId).single();
       const totalPacksVendidos = (pallets * (prod.packs_por_pallet || 100)) + packsSueltos;
 
-      if (totalPacksVendidos <= 0) return alert('Ingresá una cantidad vendida.');
+      if (totalPacksVendidos <= 0) return alert('Ingresá una cantidad vendida (pallets o bultos).');
 
       if (totalPacksVendidos > prod.stock_packs) {
-        return alert(`Stock insuficiente. Quedan ${prod.stock_packs} packs.`);
+        return alert(`Stock insuficiente. Quedan ${prod.stock_packs} bultos.`);
       }
 
       await db.from('ventas').insert({
@@ -836,7 +836,7 @@
             <td class="p-2.5 text-slate-400 text-[11px]">${fechaFmt}</td>
             <td class="p-2.5 font-semibold text-slate-100">${cliente}</td>
             <td class="p-2.5 text-slate-300">${producto}</td>
-            <td class="p-2.5 text-cyan-400">${packs} packs</td>
+            <td class="p-2.5 text-cyan-400">${packs} bultos</td>
             <td class="p-2.5 text-right font-bold text-emerald-400">$ ${total.toLocaleString()}</td>
             <td class="p-2.5 text-right text-[11px] text-slate-400">${pagoBadge}</td>
             <td class="p-2.5 text-center">
@@ -963,7 +963,7 @@
       const totalPacksComprados = (pallets * packsPorPallet) + packsSueltos;
 
       if (totalPacksComprados <= 0 || costoTotal <= 0) {
-        return alert('Ingresá la cantidad comprada y el costo total.');
+        return alert('Ingresá la cantidad comprada (pallets o bultos) y el costo total.');
       }
 
       const costoUnitarioPack = Number((costoTotal / totalPacksComprados).toFixed(2));
@@ -1024,7 +1024,7 @@
           <tr class="hover:bg-slate-800/40">
             <td class="p-2.5 text-slate-400 text-[11px]">${fechaFmt}</td>
             <td class="p-2.5 font-semibold text-slate-100">${producto}</td>
-            <td class="p-2.5 text-cyan-400">${packs} packs</td>
+            <td class="p-2.5 text-cyan-400">${packs} bultos</td>
             <td class="p-2.5 text-right font-bold text-emerald-400">$ ${total.toLocaleString()}</td>
             <td class="p-2.5 text-right text-violet-400">$ ${costoPack}</td>
             <td class="p-2.5 text-center">
