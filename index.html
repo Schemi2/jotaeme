@@ -15,6 +15,12 @@
     .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.08); }
     .tab-content { display: none; }
     .tab-content.active { display: block; }
+    
+    /* Previene el desborde nativo de los inputs date en iOS/Safari */
+    input[type="date"] {
+      min-width: 0;
+      -webkit-appearance: none;
+    }
   </style>
 </head>
 <body class="pb-24">
@@ -167,7 +173,7 @@
         <form id="form-compra" class="space-y-4">
           <div>
             <label class="block text-xs text-slate-400 mb-1">Fecha de Compra</label>
-            <input type="date" id="input-compra-fecha" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+            <input type="date" id="input-compra-fecha" class="w-full max-w-full box-border appearance-none bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
           </div>
 
           <div>
