@@ -40,7 +40,7 @@
 
   <main class="p-4 max-w-lg mx-auto">
 
-    <!-- PESTAÑA 1: INICIO (TABLERO FINANCIERO CON NAVEGACIÓN TEMPORAL) -->
+    <!-- PESTAÑA 1: INICIO (TABLERO FINANCIERO CON DRILL-DOWN) -->
     <div id="tab-inicio" class="tab-content active space-y-4">
       
       <!-- Selector de Modo: Día / Semana / Mes / Todo -->
@@ -78,13 +78,14 @@
         </button>
       </section>
 
-      <!-- Tarjeta Principal: Ganancia Neta Real -->
-      <section class="glass-card p-5 rounded-2xl border border-emerald-500/40 relative overflow-hidden shadow-xl">
+      <!-- Tarjeta Principal: Ganancia Neta Real (Clickable) -->
+      <section onclick="abrirDetalleFinanciero('neta')" class="glass-card p-5 rounded-2xl border border-emerald-500/40 relative overflow-hidden shadow-xl cursor-pointer hover:border-emerald-400 active:scale-[0.98] transition-all">
         <div class="absolute -right-6 -bottom-6 w-28 h-28 bg-emerald-500/10 rounded-full blur-xl pointer-events-none"></div>
         <div class="flex justify-between items-start">
           <div>
             <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
               <i class="fa-solid fa-wallet"></i> Ganancia Neta Real
+              <i class="fa-solid fa-circle-info text-[11px] text-emerald-500/70"></i>
             </span>
             <p class="text-[11px] text-slate-400 mt-0.5">Plata limpia tras reponer bultos y gastos</p>
           </div>
@@ -92,63 +93,81 @@
             0% Margen
           </span>
         </div>
-        <div class="text-3xl font-extrabold text-emerald-400 mt-3" id="metric-ganancia-neta">
-          $ 0
+        <div class="flex justify-between items-end mt-3">
+          <div class="text-3xl font-extrabold text-emerald-400" id="metric-ganancia-neta">
+            $ 0
+          </div>
+          <span class="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
+            Ver desglose <i class="fa-solid fa-chevron-right text-[9px]"></i>
+          </span>
         </div>
       </section>
 
-      <!-- Desglose Financiero -->
+      <!-- Desglose Financiero en 4 Bloques (Todos Clickables) -->
       <section class="grid grid-cols-2 gap-3">
         
         <!-- Facturación Total -->
-        <div class="glass-card p-3.5 rounded-xl border border-slate-800">
+        <div onclick="abrirDetalleFinanciero('ventas')" class="glass-card p-3.5 rounded-xl border border-slate-800 hover:border-blue-500/40 cursor-pointer active:scale-[0.98] transition-all">
           <div class="flex items-center justify-between text-slate-400 text-xs">
             <span>Facturación</span>
             <i class="fa-solid fa-arrow-trend-up text-blue-400"></i>
           </div>
           <div class="text-lg font-bold text-slate-100 mt-1" id="metric-ventas-totales">$ 0</div>
-          <span class="text-[10px] text-slate-400" id="metric-ventas-cant">0 bultos vendidos</span>
+          <div class="flex justify-between items-center mt-0.5">
+            <span class="text-[10px] text-slate-400" id="metric-ventas-cant">0 bultos vendidos</span>
+            <i class="fa-solid fa-chevron-right text-[8px] text-slate-500"></i>
+          </div>
         </div>
 
         <!-- Costo de Mercadería -->
-        <div class="glass-card p-3.5 rounded-xl border border-slate-800">
+        <div onclick="abrirDetalleFinanciero('costo')" class="glass-card p-3.5 rounded-xl border border-slate-800 hover:border-indigo-500/40 cursor-pointer active:scale-[0.98] transition-all">
           <div class="flex items-center justify-between text-slate-400 text-xs">
             <span>Costo Stock</span>
             <i class="fa-solid fa-boxes-packing text-indigo-400"></i>
           </div>
           <div class="text-lg font-bold text-slate-300 mt-1" id="metric-costo-mercaderia">$ 0</div>
-          <span class="text-[10px] text-slate-400">Costo de reposición</span>
+          <div class="flex justify-between items-center mt-0.5">
+            <span class="text-[10px] text-slate-400">Costo reposición</span>
+            <i class="fa-solid fa-chevron-right text-[8px] text-slate-500"></i>
+          </div>
         </div>
 
         <!-- Ganancia Bruta -->
-        <div class="glass-card p-3.5 rounded-xl border border-slate-800">
+        <div onclick="abrirDetalleFinanciero('bruta')" class="glass-card p-3.5 rounded-xl border border-slate-800 hover:border-teal-500/40 cursor-pointer active:scale-[0.98] transition-all">
           <div class="flex items-center justify-between text-slate-400 text-xs">
             <span>Ganancia Bruta</span>
             <i class="fa-solid fa-chart-pie text-teal-400"></i>
           </div>
           <div class="text-lg font-bold text-teal-400 mt-1" id="metric-ganancia-bruta">$ 0</div>
-          <span class="text-[10px] text-slate-400">Venta menos costo stock</span>
+          <div class="flex justify-between items-center mt-0.5">
+            <span class="text-[10px] text-slate-400">Margen comercial</span>
+            <i class="fa-solid fa-chevron-right text-[8px] text-slate-500"></i>
+          </div>
         </div>
 
         <!-- Gastos Operativos -->
-        <div class="glass-card p-3.5 rounded-xl border border-slate-800">
+        <div onclick="abrirDetalleFinanciero('gastos')" class="glass-card p-3.5 rounded-xl border border-slate-800 hover:border-amber-500/40 cursor-pointer active:scale-[0.98] transition-all">
           <div class="flex items-center justify-between text-slate-400 text-xs">
             <span>Gastos Flete/Día</span>
             <i class="fa-solid fa-gas-pump text-amber-400"></i>
           </div>
           <div class="text-lg font-bold text-amber-400 mt-1" id="metric-gastos-totales">$ 0</div>
-          <span class="text-[10px] text-slate-400">Nafta, peajes y varios</span>
+          <div class="flex justify-between items-center mt-0.5">
+            <span class="text-[10px] text-slate-400">Nafta y varios</span>
+            <i class="fa-solid fa-chevron-right text-[8px] text-slate-500"></i>
+          </div>
         </div>
 
       </section>
 
-      <!-- Indicador de Liquidez (Cuentas por Cobrar) -->
-      <section class="glass-card p-3.5 rounded-xl border border-amber-500/20 flex justify-between items-center">
+      <!-- Indicador de Liquidez (Cuentas por Cobrar - Clickable) -->
+      <section onclick="abrirDetalleFinanciero('deudas')" class="glass-card p-3.5 rounded-xl border border-amber-500/20 hover:border-amber-500/50 flex justify-between items-center cursor-pointer active:scale-[0.98] transition-all">
         <div>
           <span class="text-xs text-slate-400 font-medium flex items-center gap-1.5">
             <i class="fa-solid fa-receipt text-amber-400"></i> Cuentas Corrientes (Fiado en Calle)
+            <i class="fa-solid fa-chevron-right text-[9px] text-slate-500"></i>
           </span>
-          <p class="text-[11px] text-slate-500">Capital que falta cobrar a supermercados</p>
+          <p class="text-[11px] text-slate-500">Tocar para ver clientes deudores</p>
         </div>
         <div class="text-right">
           <div class="text-base font-bold text-amber-400" id="metric-por-cobrar">$ 0</div>
@@ -345,7 +364,7 @@
 
     </div>
 
-    <!-- PESTAÑA 4: GASTOS OPERATIVOS (CON CATEGORÍAS PERSONALIZADAS) -->
+    <!-- PESTAÑA 4: GASTOS OPERATIVOS -->
     <div id="tab-gastos" class="tab-content space-y-6">
       
       <section class="glass-card p-4 rounded-2xl border border-amber-500/30">
@@ -361,7 +380,6 @@
           <div>
             <label class="block text-xs text-slate-400 mb-1">Tipo de Gasto</label>
             <select id="select-gasto-categoria" onchange="toggleNuevoGastoCategoria(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none">
-              <!-- Se actualiza dinámicamente con las categorías guardadas -->
               <option value="nafta">⛽ Combustible / Nafta</option>
               <option value="peaje">🛣️ Peaje / Estacionamiento</option>
               <option value="vehiculo">🔧 Mantenimiento Camioneta</option>
@@ -370,7 +388,6 @@
             </select>
           </div>
 
-          <!-- Campo dinámico para nuevo tipo de gasto -->
           <div id="campo-nuevo-gasto-categoria" class="hidden">
             <label class="block text-xs text-amber-400 mb-1 font-medium">Nombre del Nuevo Tipo de Gasto</label>
             <input type="text" id="input-nuevo-gasto-categoria" placeholder="Ej: Seguro, Publicidad, Insumos" class="w-full bg-slate-800 border border-amber-500/50 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
@@ -482,7 +499,30 @@
 
   </main>
 
-  <!-- MODALES DE EDICIÓN -->
+  <!-- MODAL DE DETALLE DRILL-DOWN (EXPLICACIÓN DE CÁLCULO) -->
+  <div id="modal-detalle-financiero" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-md p-5 rounded-2xl border border-slate-700 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+      <div class="flex justify-between items-start border-b border-slate-800 pb-3">
+        <div>
+          <h3 id="modal-detalle-titulo" class="text-base font-bold text-white flex items-center gap-2"></h3>
+          <p id="modal-detalle-subtitulo" class="text-[11px] text-slate-400 mt-0.5"></p>
+        </div>
+        <button onclick="cerrarModalDetalle()" class="text-slate-400 hover:text-white text-lg p-1">✕</button>
+      </div>
+
+      <div id="modal-detalle-contenido" class="overflow-y-auto space-y-2 text-xs divide-y divide-slate-800/60 pr-1 flex-1">
+        <!-- Relleno dinámico -->
+      </div>
+
+      <div class="pt-2 border-t border-slate-800">
+        <button type="button" onclick="cerrarModalDetalle()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 rounded-xl">
+          Entendido, cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALES DE EDICIÓN EXISTENTES (CLIENTES, VENTAS, COMPRAS, GASTOS) -->
 
   <!-- Modal Cliente -->
   <div id="modal-editar-cliente" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
@@ -685,7 +725,7 @@
 
     // ESTADO DEL NAVEGADOR TEMPORAL
     let modoTiempo = 'dia'; // 'dia', 'semana', 'mes', 'todo'
-    let cursorFecha = new Date(); // Fecha de navegación
+    let cursorFecha = new Date();
 
     document.addEventListener('DOMContentLoaded', () => {
       const hoy = obtenerFechaLocalISO(new Date());
@@ -710,10 +750,9 @@
       return `${year}-${month}`;
     }
 
-    // Devuelve el rango Lunes a Domingo de la semana de la fecha dada
     function obtenerRangoSemana(d) {
       const curr = new Date(d);
-      const day = curr.getDay(); // 0 es Domingo, 1 es Lunes...
+      const day = curr.getDay();
       const diffToMon = curr.getDate() - day + (day === 0 ? -6 : 1);
       const inicioSemana = new Date(curr.getFullYear(), curr.getMonth(), diffToMon);
       const finSemana = new Date(inicioSemana.getFullYear(), inicioSemana.getMonth(), inicioSemana.getDate() + 6);
@@ -723,6 +762,20 @@
         inicioD: inicioSemana,
         finD: finSemana
       };
+    }
+
+    function coincidePeriodoActual(fechaRegistro) {
+      if (!fechaRegistro) return false;
+      const f = fechaRegistro.includes('T') ? fechaRegistro.split('T')[0] : fechaRegistro;
+
+      if (modoTiempo === 'dia') return f === obtenerFechaLocalISO(cursorFecha);
+      if (modoTiempo === 'semana') {
+        const r = obtenerRangoSemana(cursorFecha);
+        return f >= r.inicio && f <= r.fin;
+      }
+      if (modoTiempo === 'mes') return f.startsWith(obtenerMesLocalISO(cursorFecha));
+      if (modoTiempo === 'todo') return true;
+      return true;
     }
 
     // SISTEMA DE NOTIFICACIÓN FLOTANTE
@@ -789,7 +842,7 @@
       }
     }
 
-    // 3. NAVEGADOR DE TIEMPO (DÍA / SEMANA / MES / HISTÓRICO)
+    // 3. NAVEGADOR DE TIEMPO
     function cambiarModoTiempo(modo, btn) {
       modoTiempo = modo;
       document.querySelectorAll('.modo-tiempo-btn').forEach(b => {
@@ -888,24 +941,9 @@
       }
     }
 
-    // 4. MOTOR DE CÁLCULO FINANCIERO FILTRADO POR EL NAVEGADOR
+    // 4. MOTOR DE CÁLCULO FINANCIERO
     function calcularMetricasFinancieras() {
-      const fechaObjetivoDia = obtenerFechaLocalISO(cursorFecha);
-      const rangoSemana = obtenerRangoSemana(cursorFecha);
-      const mesObjetivo = obtenerMesLocalISO(cursorFecha);
-
-      function coincidePeriodo(fechaRegistro) {
-        if (!fechaRegistro) return false;
-        const f = fechaRegistro.includes('T') ? fechaRegistro.split('T')[0] : fechaRegistro;
-
-        if (modoTiempo === 'dia') return f === fechaObjetivoDia;
-        if (modoTiempo === 'semana') return f >= rangoSemana.inicio && f <= rangoSemana.fin;
-        if (modoTiempo === 'mes') return f.startsWith(mesObjetivo);
-        if (modoTiempo === 'todo') return true;
-        return true;
-      }
-
-      const ventasPeriodo = ventasGlobales.filter(v => coincidePeriodo(v.fecha || v.created_at));
+      const ventasPeriodo = ventasGlobales.filter(v => coincidePeriodoActual(v.fecha || v.created_at));
 
       const mapaCostos = {};
       productosGlobales.forEach(p => {
@@ -926,7 +964,7 @@
         cantidadBultosVendidos += bultos;
       });
 
-      const gastosPeriodo = gastosGlobales.filter(g => coincidePeriodo(g.fecha || g.created_at));
+      const gastosPeriodo = gastosGlobales.filter(g => coincidePeriodoActual(g.fecha || g.created_at));
       const gastosTotales = gastosPeriodo.reduce((acc, g) => acc + Number(g.monto || 0), 0);
 
       const gananciaBruta = ventasTotales - costoMercaderiaVendida;
@@ -938,9 +976,9 @@
       document.getElementById('badge-margen-neto').textContent = `${margenNeto}% Margen`;
 
       if (gananciaNeta < 0) {
-        document.getElementById('metric-ganancia-neta').className = "text-3xl font-extrabold text-rose-400 mt-3";
+        document.getElementById('metric-ganancia-neta').className = "text-3xl font-extrabold text-rose-400";
       } else {
-        document.getElementById('metric-ganancia-neta').className = "text-3xl font-extrabold text-emerald-400 mt-3";
+        document.getElementById('metric-ganancia-neta').className = "text-3xl font-extrabold text-emerald-400";
       }
 
       document.getElementById('metric-ventas-totales').textContent = `$ ${Math.round(ventasTotales).toLocaleString()}`;
@@ -950,7 +988,202 @@
       document.getElementById('metric-gastos-totales').textContent = `$ ${Math.round(gastosTotales).toLocaleString()}`;
     }
 
-    // 5. LEER PRODUCTOS
+    // 5. MODAL DETALLE / EXPLICACIÓN DE CÁLCULO (DRILL-DOWN)
+    function abrirDetalleFinanciero(tipo) {
+      const titulo = document.getElementById('modal-detalle-titulo');
+      const subtitulo = document.getElementById('modal-detalle-subtitulo');
+      const contenido = document.getElementById('modal-detalle-contenido');
+
+      const ventasPeriodo = ventasGlobales.filter(v => coincidePeriodoActual(v.fecha || v.created_at));
+      const gastosPeriodo = gastosGlobales.filter(g => coincidePeriodoActual(g.fecha || g.created_at));
+
+      const mapaCostos = {};
+      productosGlobales.forEach(p => {
+        mapaCostos[p.nombre] = Number(p.precio_costo_pack || 0);
+      });
+
+      let totalVentas = 0;
+      let totalCosto = 0;
+      ventasPeriodo.forEach(v => {
+        totalVentas += Number(v.monto_total || 0);
+        totalCosto += (Number(v.cantidad_packs || 0) * (mapaCostos[v.producto_nombre] || 0));
+      });
+      const totalGastos = gastosPeriodo.reduce((acc, g) => acc + Number(g.monto || 0), 0);
+      const gananciaBruta = totalVentas - totalCosto;
+      const gananciaNeta = gananciaBruta - totalGastos;
+
+      contenido.innerHTML = '';
+
+      if (tipo === 'neta') {
+        titulo.innerHTML = `<i class="fa-solid fa-wallet text-emerald-400"></i> Balance de Ganancia Neta`;
+        subtitulo.textContent = 'Cálculo paso a paso de la plata que te queda libre en el bolsillo';
+
+        contenido.innerHTML = `
+          <div class="space-y-2 py-2">
+            <div class="flex justify-between items-center p-2 rounded-lg bg-slate-800/60">
+              <span class="text-slate-300 font-medium">(+) Facturación Total Cobrada</span>
+              <span class="font-bold text-slate-100">$ ${totalVentas.toLocaleString()}</span>
+            </div>
+            <div class="flex justify-between items-center p-2 rounded-lg bg-slate-800/60">
+              <span class="text-slate-300 font-medium">(-) Costo Reposición Stock (CMV)</span>
+              <span class="font-bold text-rose-400">- $ ${totalCosto.toLocaleString()}</span>
+            </div>
+            <div class="flex justify-between items-center p-2 rounded-lg bg-slate-800/90 border border-slate-700">
+              <span class="text-teal-300 font-bold">(=) Ganancia Bruta</span>
+              <span class="font-bold text-teal-300">$ ${gananciaBruta.toLocaleString()}</span>
+            </div>
+            <div class="flex justify-between items-center p-2 rounded-lg bg-slate-800/60">
+              <span class="text-slate-300 font-medium">(-) Gastos Operativos (Flete, etc.)</span>
+              <span class="font-bold text-amber-400">- $ ${totalGastos.toLocaleString()}</span>
+            </div>
+            <div class="flex justify-between items-center p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 mt-3">
+              <div>
+                <span class="text-emerald-400 font-extrabold text-sm block">(=) Ganancia Neta Real</span>
+                <span class="text-[10px] text-slate-400">Margen neto: ${totalVentas > 0 ? ((gananciaNeta/totalVentas)*100).toFixed(1) : 0}%</span>
+              </div>
+              <span class="text-xl font-extrabold text-emerald-400">$ ${gananciaNeta.toLocaleString()}</span>
+            </div>
+          </div>
+        `;
+      } else if (tipo === 'ventas') {
+        titulo.innerHTML = `<i class="fa-solid fa-arrow-trend-up text-blue-400"></i> Detalle de Facturación`;
+        subtitulo.textContent = `${ventasPeriodo.length} venta(s) realizadas en este período`;
+
+        if (ventasPeriodo.length === 0) {
+          contenido.innerHTML = '<p class="py-6 text-center text-slate-500">No hay ventas registradas en esta fecha.</p>';
+        } else {
+          ventasPeriodo.forEach(v => {
+            contenido.innerHTML += `
+              <div class="py-2 flex justify-between items-center">
+                <div>
+                  <div class="font-semibold text-slate-100">${v.cliente_nombre}</div>
+                  <div class="text-[10px] text-slate-400">${v.producto_nombre} • ${v.cantidad_packs} bultos</div>
+                </div>
+                <div class="text-right">
+                  <div class="font-bold text-slate-100">$ ${Number(v.monto_total).toLocaleString()}</div>
+                  <div class="text-[10px] text-slate-400">${v.metodo_pago}</div>
+                </div>
+              </div>
+            `;
+          });
+        }
+      } else if (tipo === 'costo') {
+        titulo.innerHTML = `<i class="fa-solid fa-boxes-packing text-indigo-400"></i> Detalle de Costo de Mercadería`;
+        subtitulo.textContent = 'Cuánto te cuesta reponer los bultos entregados';
+
+        if (ventasPeriodo.length === 0) {
+          contenido.innerHTML = '<p class="py-6 text-center text-slate-500">No hay mercadería vendida en esta fecha.</p>';
+        } else {
+          // Agrupar bultos por producto
+          const agrupado = {};
+          ventasPeriodo.forEach(v => {
+            const pName = v.producto_nombre;
+            agrupado[pName] = (agrupado[pName] || 0) + Number(v.cantidad_packs || 0);
+          });
+
+          for (const [prod, bultos] of Object.entries(agrupado)) {
+            const costoUnit = mapaCostos[prod] || 0;
+            const subtotal = bultos * costoUnit;
+            contenido.innerHTML += `
+              <div class="py-2 flex justify-between items-center">
+                <div>
+                  <div class="font-semibold text-slate-100">${prod}</div>
+                  <div class="text-[10px] text-slate-400">${bultos} bultos a $${costoUnit} costo unitario</div>
+                </div>
+                <div class="text-right">
+                  <div class="font-bold text-indigo-400">$ ${subtotal.toLocaleString()}</div>
+                  <div class="text-[10px] text-slate-400">reposición</div>
+                </div>
+              </div>
+            `;
+          }
+        }
+      } else if (tipo === 'bruta') {
+        titulo.innerHTML = `<i class="fa-solid fa-chart-pie text-teal-400"></i> Ganancia Bruta por Producto`;
+        subtitulo.textContent = 'Diferencia comercial (Venta menos costo de compra)';
+
+        if (ventasPeriodo.length === 0) {
+          contenido.innerHTML = '<p class="py-6 text-center text-slate-500">Sin operaciones en esta fecha.</p>';
+        } else {
+          const agrupado = {};
+          ventasPeriodo.forEach(v => {
+            const p = v.producto_nombre;
+            if (!agrupado[p]) agrupado[p] = { bultos: 0, venta: 0 };
+            agrupado[p].bultos += Number(v.cantidad_packs || 0);
+            agrupado[p].venta += Number(v.monto_total || 0);
+          });
+
+          for (const [prod, datos] of Object.entries(agrupado)) {
+            const costo = datos.bultos * (mapaCostos[prod] || 0);
+            const margen = datos.venta - costo;
+            contenido.innerHTML += `
+              <div class="py-2.5 flex justify-between items-center">
+                <div>
+                  <div class="font-semibold text-slate-100">${prod} (${datos.bultos} bultos)</div>
+                  <div class="text-[10px] text-slate-400">Venta: $${datos.venta.toLocaleString()} • Costo: $${costo.toLocaleString()}</div>
+                </div>
+                <div class="text-right">
+                  <div class="font-bold text-teal-400">+$ ${margen.toLocaleString()}</div>
+                  <div class="text-[10px] text-slate-400">${datos.venta > 0 ? ((margen/datos.venta)*100).toFixed(0) : 0}% margen</div>
+                </div>
+              </div>
+            `;
+          }
+        }
+      } else if (tipo === 'gastos') {
+        titulo.innerHTML = `<i class="fa-solid fa-gas-pump text-amber-400"></i> Detalle de Gastos del Período`;
+        subtitulo.textContent = `${gastosPeriodo.length} gasto(s) registrados`;
+
+        if (gastosPeriodo.length === 0) {
+          contenido.innerHTML = '<p class="py-6 text-center text-slate-500">No se registraron gastos en esta fecha.</p>';
+        } else {
+          gastosPeriodo.forEach(g => {
+            contenido.innerHTML += `
+              <div class="py-2 flex justify-between items-center">
+                <div>
+                  <div class="font-semibold text-slate-100 capitalize">${g.categoria}</div>
+                  <div class="text-[10px] text-slate-400">${g.descripcion || 'Sin detalle'} • ${g.fecha || ''}</div>
+                </div>
+                <div class="font-bold text-amber-400">$ ${Number(g.monto).toLocaleString()}</div>
+              </div>
+            `;
+          });
+        }
+      } else if (tipo === 'deudas') {
+        titulo.innerHTML = `<i class="fa-solid fa-receipt text-amber-400"></i> Cuentas Corrientes Pendientes`;
+        subtitulo.textContent = 'Clientes con saldo adeudado en la calle';
+
+        const deudores = clientesGlobales.filter(c => Number(c.saldo_deuda || 0) > 0);
+        if (deudores.length === 0) {
+          contenido.innerHTML = '<p class="py-6 text-center text-slate-500">¡Al día! No tenés fiados pendientes de cobro.</p>';
+        } else {
+          deudores.forEach(d => {
+            contenido.innerHTML += `
+              <div class="py-2.5 flex justify-between items-center">
+                <div>
+                  <div class="font-semibold text-slate-100">${d.nombre}</div>
+                  <div class="text-[10px] text-slate-400">${d.localidad || ''} • Tel: ${d.telefono || 'Sin tel'}</div>
+                </div>
+                <div class="text-right">
+                  <div class="font-bold text-amber-400 text-sm">$ ${Number(d.saldo_deuda).toLocaleString()}</div>
+                  <button onclick="cobrarDeuda(${d.id}); cerrarModalDetalle();" class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30 mt-0.5">
+                    Saldar
+                  </button>
+                </div>
+              </div>
+            `;
+          });
+        }
+      }
+
+      document.getElementById('modal-detalle-financiero').classList.remove('hidden');
+    }
+
+    function cerrarModalDetalle() {
+      document.getElementById('modal-detalle-financiero').classList.add('hidden');
+    }
+
+    // 6. LEER PRODUCTOS
     async function cargarProductos() {
       const { data: productos, error } = await db.from('productos').select('*');
       if (error) console.error('Error al cargar productos:', error);
@@ -998,7 +1231,7 @@
       });
     }
 
-    // 6. GUARDAR VENTA & CARGAR HISTORIAL DE VENTAS
+    // 7. GUARDAR VENTA & CARGAR HISTORIAL DE VENTAS
     async function guardarVenta() {
       const fechaVenta = document.getElementById('input-venta-fecha').value || obtenerFechaLocalISO(new Date());
       let clienteNombre = document.getElementById('select-cliente').value;
@@ -1183,7 +1416,7 @@
       cargarTodo();
     }
 
-    // 7. GUARDAR Y CARGAR COMPRAS
+    // 8. GUARDAR Y CARGAR COMPRAS
     async function guardarCompra() {
       const fechaCompra = document.getElementById('input-compra-fecha').value || obtenerFechaLocalISO(new Date());
       let productoId = document.getElementById('select-compra-producto').value;
@@ -1361,7 +1594,7 @@
       cargarTodo();
     }
 
-    // 8. GASTOS (CON CATEGORÍAS PERSONALIZADAS Y EDICIÓN)
+    // 9. GASTOS (CON CATEGORÍAS PERSONALIZADAS Y EDICIÓN)
     function actualizarSelectCategoriasGasto() {
       const select = document.getElementById('select-gasto-categoria');
       const baseCats = {
@@ -1541,7 +1774,7 @@
       cargarTodo();
     }
 
-    // 9. CLIENTES (ALTA, CARGA Y EDICIÓN)
+    // 10. CLIENTES (ALTA, CARGA Y EDICIÓN)
     async function guardarClienteDirectorio() {
       const nombre = document.getElementById('input-cliente-nombre').value.trim();
       const direccion = document.getElementById('input-cliente-direccion').value.trim();
@@ -1666,6 +1899,15 @@
       cerrarModalEditar();
       mostrarNotificacion('¡Cliente actualizado con éxito!');
       cargarTodo();
+    }
+
+    // SALDAR DEUDA
+    async function cobrarDeuda(clienteId) {
+      if (confirm('¿Confirmás que el cliente pagó la deuda completa?')) {
+        await db.from('clientes').update({ saldo_deuda: 0 }).eq('id', clienteId);
+        mostrarNotificacion('¡Deuda saldada correctamente!');
+        cargarTodo();
+      }
     }
   </script>
 </body>
