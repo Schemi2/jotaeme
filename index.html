@@ -41,21 +41,37 @@
   <main class="p-4 max-w-lg mx-auto">
 
     <!-- PESTAÑA 1: INICIO (TABLERO FINANCIERO Y CONTROL DE GANANCIAS) -->
-    <div id="tab-inicio" class="tab-content active space-y-5">
+    <div id="tab-inicio" class="tab-content active space-y-4">
       
-      <!-- Selector de Período Temporal -->
+      <!-- Selector de Modo: Día / Mes / Todo -->
       <section class="flex bg-slate-900/90 p-1 rounded-xl border border-slate-800">
-        <button onclick="cambiarPeriodo('hoy', this)" class="periodo-btn active flex-1 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white transition-all">
-          Hoy
+        <button onclick="cambiarModoTiempo('dia', this)" class="modo-tiempo-btn active flex-1 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white transition-all">
+          Por Día
         </button>
-        <button onclick="cambiarPeriodo('semana', this)" class="periodo-btn flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition-all">
-          7 Días
+        <button onclick="cambiarModoTiempo('mes', this)" class="modo-tiempo-btn flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition-all">
+          Por Mes
         </button>
-        <button onclick="cambiarPeriodo('mes', this)" class="periodo-btn flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition-all">
-          Este Mes
-        </button>
-        <button onclick="cambiarPeriodo('todo', this)" class="periodo-btn flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition-all">
+        <button onclick="cambiarModoTiempo('todo', this)" class="modo-tiempo-btn flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition-all">
           Histórico
+        </button>
+      </section>
+
+      <!-- Barra de Navegación Temporal (Flechas izquierda / derecha) -->
+      <section id="barra-navegacion-temporal" class="glass-card p-2 rounded-xl border border-slate-800 flex items-center justify-between shadow-md">
+        <button onclick="moverTiempo(-1)" class="w-10 h-10 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 flex items-center justify-center text-slate-200 transition-all">
+          <i class="fa-solid fa-chevron-left text-sm"></i>
+        </button>
+        
+        <div class="text-center px-2">
+          <div id="etiqueta-tiempo-cursor" class="font-bold text-sm text-slate-100 flex items-center justify-center gap-1.5">
+            <i class="fa-regular fa-calendar text-blue-400 text-xs"></i>
+            <span>Cargando fecha...</span>
+          </div>
+          <span id="sub-etiqueta-tiempo" class="text-[10px] text-slate-400 block mt-0.5">Período seleccionado</span>
+        </div>
+
+        <button onclick="moverTiempo(1)" class="w-10 h-10 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 flex items-center justify-center text-slate-200 transition-all">
+          <i class="fa-solid fa-chevron-right text-sm"></i>
         </button>
       </section>
 
@@ -67,7 +83,7 @@
             <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
               <i class="fa-solid fa-wallet"></i> Ganancia Neta Real
             </span>
-            <p class="text-[11px] text-slate-400 mt-0.5">Plata limpia tras reponer stock y gastos</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Plata limpia tras reponer bultos y gastos</p>
           </div>
           <span id="badge-margen-neto" class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
             0% Margen
@@ -108,7 +124,7 @@
             <i class="fa-solid fa-chart-pie text-teal-400"></i>
           </div>
           <div class="text-lg font-bold text-teal-400 mt-1" id="metric-ganancia-bruta">$ 0</div>
-          <span class="text-[10px] text-slate-400">Ventas menos costo stock</span>
+          <span class="text-[10px] text-slate-400">Venta menos costo stock</span>
         </div>
 
         <!-- Gastos Operativos -->
@@ -456,7 +472,7 @@
 
   </main>
 
-  <!-- MODALES DE EDICIÓN (CLIENTES, VENTAS, COMPRAS, GASTOS) -->
+  <!-- MODALES DE EDICIÓN -->
 
   <!-- Modal Cliente -->
   <div id="modal-editar-cliente" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
@@ -662,15 +678,33 @@
     let ventasGlobales = [];
     let comprasGlobales = [];
     let gastosGlobales = [];
-    let periodoSeleccionado = 'hoy'; // 'hoy', 'semana', 'mes', 'todo'
+
+    // ESTADO DEL NAVEGADOR TEMPORAL
+    let modoTiempo = 'dia'; // 'dia', 'mes', 'todo'
+    let cursorFecha = new Date(); // Fecha actual de navegación
 
     document.addEventListener('DOMContentLoaded', () => {
-      const hoy = new Date().toISOString().split('T')[0];
+      const hoy = obtenerFechaLocalISO(new Date());
       document.getElementById('input-compra-fecha').value = hoy;
       document.getElementById('input-venta-fecha').value = hoy;
       document.getElementById('input-gasto-fecha').value = hoy;
+      actualizarEtiquetaNavegador();
       cargarTodo();
     });
+
+    // HELPERS DE FECHA
+    function obtenerFechaLocalISO(d) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function obtenerMesLocalISO(d) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      return `${year}-${month}`;
+    }
 
     // SISTEMA DE NOTIFICACIÓN FLOTANTE
     function mostrarNotificacion(mensaje) {
@@ -726,44 +760,103 @@
       }
     }
 
-    // 3. CAMBIO DE PERÍODO TEMPORAL
-    function cambiarPeriodo(periodo, btn) {
-      periodoSeleccionado = periodo;
-      document.querySelectorAll('.periodo-btn').forEach(b => {
+    // 3. NAVEGADOR DE TIEMPO (DÍA A DÍA / MES A MES)
+    function cambiarModoTiempo(modo, btn) {
+      modoTiempo = modo;
+      document.querySelectorAll('.modo-tiempo-btn').forEach(b => {
         b.classList.remove('bg-blue-600', 'text-white');
         b.classList.add('text-slate-400');
       });
       btn.classList.add('bg-blue-600', 'text-white');
       btn.classList.remove('text-slate-400');
+
+      const barra = document.getElementById('barra-navegacion-temporal');
+      if (modo === 'todo') {
+        barra.classList.add('opacity-40', 'pointer-events-none');
+      } else {
+        barra.classList.remove('opacity-40', 'pointer-events-none');
+      }
+
+      actualizarEtiquetaNavegador();
       calcularMetricasFinancieras();
     }
 
-    // 4. MOTOR DE CÁLCULO FINANCIERO (GANANCIA NETA, BRUTA, CMV, GASTOS)
+    function moverTiempo(delta) {
+      if (modoTiempo === 'dia') {
+        cursorFecha.setDate(cursorFecha.getDate() + delta);
+      } else if (modoTiempo === 'mes') {
+        cursorFecha.setMonth(cursorFecha.getMonth() + delta);
+      }
+      actualizarEtiquetaNavegador();
+      calcularMetricasFinancieras();
+    }
+
+    function actualizarEtiquetaNavegador() {
+      const contenedor = document.getElementById('etiqueta-tiempo-cursor');
+      const subEtiqueta = document.getElementById('sub-etiqueta-tiempo');
+
+      if (modoTiempo === 'todo') {
+        contenedor.innerHTML = `<i class="fa-solid fa-infinity text-blue-400 text-xs"></i> <span>Todo el Histórico</span>`;
+        subEtiqueta.textContent = 'Balance acumulado completo';
+        return;
+      }
+
+      if (modoTiempo === 'dia') {
+        const hoyStr = obtenerFechaLocalISO(new Date());
+        const cursorStr = obtenerFechaLocalISO(cursorFecha);
+
+        const ayer = new Date();
+        ayer.setDate(ayer.getDate() - 1);
+        const ayerStr = obtenerFechaLocalISO(ayer);
+
+        const opciones = { weekday: 'short', day: 'numeric', month: 'short' };
+        let texto = cursorFecha.toLocaleDateString('es-AR', opciones);
+        texto = texto.charAt(0).toUpperCase() + texto.slice(1);
+
+        if (cursorStr === hoyStr) {
+          contenedor.innerHTML = `<i class="fa-regular fa-calendar-check text-emerald-400 text-xs"></i> <span>Hoy • ${texto}</span>`;
+          subEtiqueta.textContent = 'Día actual';
+        } else if (cursorStr === ayerStr) {
+          contenedor.innerHTML = `<i class="fa-regular fa-calendar text-amber-400 text-xs"></i> <span>Ayer • ${texto}</span>`;
+          subEtiqueta.textContent = 'Día anterior';
+        } else {
+          contenedor.innerHTML = `<i class="fa-regular fa-calendar text-blue-400 text-xs"></i> <span>${texto}</span>`;
+          subEtiqueta.textContent = 'Fecha puntual';
+        }
+      } else if (modoTiempo === 'mes') {
+        const mesOpciones = { month: 'long', year: 'numeric' };
+        let textoMes = cursorFecha.toLocaleDateString('es-AR', mesOpciones);
+        textoMes = textoMes.charAt(0).toUpperCase() + textoMes.slice(1);
+
+        const mesActual = obtenerMesLocalISO(new Date());
+        const mesCursor = obtenerMesLocalISO(cursorFecha);
+
+        if (mesCursor === mesActual) {
+          contenedor.innerHTML = `<i class="fa-solid fa-calendar-days text-emerald-400 text-xs"></i> <span>Este Mes (${textoMes})</span>`;
+          subEtiqueta.textContent = 'Mes en curso';
+        } else {
+          contenedor.innerHTML = `<i class="fa-solid fa-calendar-days text-blue-400 text-xs"></i> <span>${textoMes}</span>`;
+          subEtiqueta.textContent = 'Mes cerrado';
+        }
+      }
+    }
+
+    // 4. MOTOR DE CÁLCULO FINANCIERO FILTRADO POR EL NAVEGADOR
     function calcularMetricasFinancieras() {
-      const hoy = new Date();
-      const hoyStr = hoy.toISOString().split('T')[0];
-      
-      // Fecha límite para 'semana' (hace 7 días)
-      const hace7Dias = new Date();
-      hace7Dias.setDate(hoy.getDate() - 7);
-      const hace7DiasStr = hace7Dias.toISOString().split('T')[0];
+      const fechaObjetivoDia = obtenerFechaLocalISO(cursorFecha);
+      const mesObjetivo = obtenerMesLocalISO(cursorFecha);
 
-      // Mes actual 'YYYY-MM'
-      const mesActualStr = hoyStr.substring(0, 7);
-
-      // Filtro de fecha
       function coincidePeriodo(fechaRegistro) {
         if (!fechaRegistro) return false;
         const f = fechaRegistro.includes('T') ? fechaRegistro.split('T')[0] : fechaRegistro;
 
-        if (periodoSeleccionado === 'hoy') return f === hoyStr;
-        if (periodoSeleccionado === 'semana') return f >= hace7DiasStr && f <= hoyStr;
-        if (periodoSeleccionado === 'mes') return f.startsWith(mesActualStr);
-        if (periodoSeleccionado === 'todo') return true;
+        if (modoTiempo === 'dia') return f === fechaObjetivoDia;
+        if (modoTiempo === 'mes') return f.startsWith(mesObjetivo);
+        if (modoTiempo === 'todo') return true;
         return true;
       }
 
-      // 1. Filtrar ventas del período
+      // 1. Filtrar ventas
       const ventasPeriodo = ventasGlobales.filter(v => coincidePeriodo(v.fecha || v.created_at));
 
       // 2. Mapear costos unitarios por producto
@@ -786,22 +879,20 @@
         cantidadBultosVendidos += bultos;
       });
 
-      // 3. Filtrar gastos del período
+      // 3. Filtrar gastos
       const gastosPeriodo = gastosGlobales.filter(g => coincidePeriodo(g.fecha || g.created_at));
       const gastosTotales = gastosPeriodo.reduce((acc, g) => acc + Number(g.monto || 0), 0);
 
-      // 4. Ganancia Bruta y Ganancia Neta
+      // 4. Ganancia Bruta y Neta
       const gananciaBruta = ventasTotales - costoMercaderiaVendida;
       const gananciaNeta = gananciaBruta - gastosTotales;
 
       // 5. Margen Neto %
       const margenNeto = ventasTotales > 0 ? ((gananciaNeta / ventasTotales) * 100).toFixed(1) : 0;
 
-      // Volcar resultados a la pantalla
       document.getElementById('metric-ganancia-neta').textContent = `$ ${Math.round(gananciaNeta).toLocaleString()}`;
       document.getElementById('badge-margen-neto').textContent = `${margenNeto}% Margen`;
 
-      // Si la ganancia neta es negativa, pintar en rojo
       if (gananciaNeta < 0) {
         document.getElementById('metric-ganancia-neta').className = "text-3xl font-extrabold text-rose-400 mt-3";
       } else {
@@ -865,7 +956,7 @@
 
     // 6. GUARDAR VENTA & CARGAR HISTORIAL DE VENTAS
     async function guardarVenta() {
-      const fechaVenta = document.getElementById('input-venta-fecha').value || new Date().toISOString().split('T')[0];
+      const fechaVenta = document.getElementById('input-venta-fecha').value || obtenerFechaLocalISO(new Date());
       let clienteNombre = document.getElementById('select-cliente').value;
       const nuevoCliente = document.getElementById('nombre-nuevo-cliente').value.trim();
       const productoId = document.getElementById('select-producto-venta').value;
@@ -913,7 +1004,7 @@
 
       mostrarNotificacion('¡Venta registrada con éxito!');
       document.getElementById('form-venta').reset();
-      document.getElementById('input-venta-fecha').value = new Date().toISOString().split('T')[0];
+      document.getElementById('input-venta-fecha').value = obtenerFechaLocalISO(new Date());
       document.getElementById('campo-nuevo-cliente').classList.add('hidden');
       cargarTodo();
     }
@@ -982,7 +1073,7 @@
       document.getElementById('edit-venta-packs-original').value = v.cantidad_packs || 0;
       document.getElementById('edit-venta-prod-original').value = v.producto_nombre || '';
 
-      let f = v.fecha ? (v.fecha.includes('T') ? v.fecha.split('T')[0] : v.fecha) : new Date().toISOString().split('T')[0];
+      let f = v.fecha ? (v.fecha.includes('T') ? v.fecha.split('T')[0] : v.fecha) : obtenerFechaLocalISO(new Date());
       document.getElementById('edit-venta-fecha').value = f;
 
       const selCli = document.getElementById('edit-venta-cliente');
@@ -1050,7 +1141,7 @@
 
     // 7. GUARDAR Y CARGAR COMPRAS
     async function guardarCompra() {
-      const fechaCompra = document.getElementById('input-compra-fecha').value || new Date().toISOString().split('T')[0];
+      const fechaCompra = document.getElementById('input-compra-fecha').value || obtenerFechaLocalISO(new Date());
       let productoId = document.getElementById('select-compra-producto').value;
       const nuevoNombre = document.getElementById('input-nuevo-producto-nombre').value.trim();
       const packsPorPalletInput = Number(document.getElementById('input-nuevo-packs-pallet').value || 100);
@@ -1112,7 +1203,7 @@
 
       mostrarNotificacion('¡Compra registrada con éxito!');
       document.getElementById('form-compra').reset();
-      document.getElementById('input-compra-fecha').value = new Date().toISOString().split('T')[0];
+      document.getElementById('input-compra-fecha').value = obtenerFechaLocalISO(new Date());
       document.getElementById('campo-nuevo-producto').classList.add('hidden');
       cargarTodo();
     }
@@ -1170,7 +1261,7 @@
       document.getElementById('edit-compra-packs-original').value = c.cantidad_packs || 0;
       document.getElementById('edit-compra-prod-original').value = c.producto_nombre || '';
 
-      let f = c.fecha ? (c.fecha.includes('T') ? c.fecha.split('T')[0] : c.fecha) : new Date().toISOString().split('T')[0];
+      let f = c.fecha ? (c.fecha.includes('T') ? c.fecha.split('T')[0] : c.fecha) : obtenerFechaLocalISO(new Date());
       document.getElementById('edit-compra-fecha').value = f;
 
       const selProd = document.getElementById('edit-compra-producto');
@@ -1228,7 +1319,7 @@
 
     // 8. GASTOS (ALTA, CARGA Y EDICIÓN)
     async function guardarGasto() {
-      const fechaGasto = document.getElementById('input-gasto-fecha').value || new Date().toISOString().split('T')[0];
+      const fechaGasto = document.getElementById('input-gasto-fecha').value || obtenerFechaLocalISO(new Date());
       const categoria = document.getElementById('select-gasto-categoria').value;
       const monto = Number(document.getElementById('input-gasto-monto').value || 0);
       const descripcion = document.getElementById('input-gasto-descripcion').value.trim();
@@ -1246,7 +1337,7 @@
 
       mostrarNotificacion('¡Gasto registrado con éxito!');
       document.getElementById('form-gasto').reset();
-      document.getElementById('input-gasto-fecha').value = new Date().toISOString().split('T')[0];
+      document.getElementById('input-gasto-fecha').value = obtenerFechaLocalISO(new Date());
       cargarTodo();
     }
 
@@ -1312,7 +1403,7 @@
 
       document.getElementById('edit-gasto-id').value = g.id;
 
-      let f = g.fecha ? (g.fecha.includes('T') ? g.fecha.split('T')[0] : g.fecha) : new Date().toISOString().split('T')[0];
+      let f = g.fecha ? (g.fecha.includes('T') ? g.fecha.split('T')[0] : g.fecha) : obtenerFechaLocalISO(new Date());
       document.getElementById('edit-gasto-fecha').value = f;
       document.getElementById('edit-gasto-categoria').value = g.categoria || 'nafta';
       document.getElementById('edit-gasto-monto').value = g.monto || 0;
