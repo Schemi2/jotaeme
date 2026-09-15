@@ -364,7 +364,7 @@
 
     </div>
 
-    <!-- PESTAÑA 4: GASTOS OPERATIVOS -->
+    <!-- PESTAÑA 4: GASTOS OPERATIVOS (CON CATEGORÍAS PERSONALIZADAS) -->
     <div id="tab-gastos" class="tab-content space-y-6">
       
       <section class="glass-card p-4 rounded-2xl border border-amber-500/30">
@@ -522,7 +522,7 @@
     </div>
   </div>
 
-  <!-- MODALES DE EDICIÓN EXISTENTES (CLIENTES, VENTAS, COMPRAS, GASTOS) -->
+  <!-- MODALES DE EDICIÓN CON BOTÓN DE ELIMINACIÓN -->
 
   <!-- Modal Cliente -->
   <div id="modal-editar-cliente" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
@@ -555,9 +555,14 @@
           <input type="text" id="edit-cliente-telefono" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
         </div>
       </div>
-      <div class="flex space-x-3 pt-2">
-        <button type="button" onclick="cerrarModalEditar()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl">Cancelar</button>
-        <button type="button" onclick="guardarEdicionCliente()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg">Guardar</button>
+      <div class="space-y-2 pt-2">
+        <div class="flex space-x-3">
+          <button type="button" onclick="cerrarModalEditar()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl">Cancelar</button>
+          <button type="button" onclick="guardarEdicionCliente()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg">Guardar</button>
+        </div>
+        <button type="button" onclick="eliminarCliente()" class="w-full bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 font-bold py-2.5 rounded-xl transition-all text-xs flex items-center justify-center gap-2">
+          <i class="fa-solid fa-trash-can"></i> Eliminar Cliente
+        </button>
       </div>
     </div>
   </div>
@@ -606,9 +611,14 @@
           </select>
         </div>
       </div>
-      <div class="flex space-x-3 pt-2">
-        <button type="button" onclick="cerrarModalEditarVenta()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl">Cancelar</button>
-        <button type="button" onclick="guardarEdicionVenta()" class="w-1/2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg">Guardar</button>
+      <div class="space-y-2 pt-2">
+        <div class="flex space-x-3">
+          <button type="button" onclick="cerrarModalEditarVenta()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl">Cancelar</button>
+          <button type="button" onclick="guardarEdicionVenta()" class="w-1/2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg">Guardar</button>
+        </div>
+        <button type="button" onclick="eliminarVenta()" class="w-full bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 font-bold py-2.5 rounded-xl transition-all text-xs flex items-center justify-center gap-2">
+          <i class="fa-solid fa-trash-can"></i> Eliminar Venta y Devolver Stock
+        </button>
       </div>
     </div>
   </div>
@@ -645,9 +655,14 @@
           </div>
         </div>
       </div>
-      <div class="flex space-x-3 pt-2">
-        <button type="button" onclick="cerrarModalEditarCompra()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl">Cancelar</button>
-        <button type="button" onclick="guardarEdicionCompra()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg">Guardar</button>
+      <div class="space-y-2 pt-2">
+        <div class="flex space-x-3">
+          <button type="button" onclick="cerrarModalEditarCompra()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl">Cancelar</button>
+          <button type="button" onclick="guardarEdicionCompra()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg">Guardar</button>
+        </div>
+        <button type="button" onclick="eliminarCompra()" class="w-full bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 font-bold py-2.5 rounded-xl transition-all text-xs flex items-center justify-center gap-2">
+          <i class="fa-solid fa-trash-can"></i> Eliminar Compra y Ajustar Stock
+        </button>
       </div>
     </div>
   </div>
@@ -680,9 +695,14 @@
           <input type="text" id="edit-gasto-descripcion" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
         </div>
       </div>
-      <div class="flex space-x-3 pt-2">
-        <button type="button" onclick="cerrarModalEditarGasto()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl">Cancelar</button>
-        <button type="button" onclick="guardarEdicionGasto()" class="w-1/2 bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-xl shadow-lg">Guardar</button>
+      <div class="space-y-2 pt-2">
+        <div class="flex space-x-3">
+          <button type="button" onclick="cerrarModalEditarGasto()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl">Cancelar</button>
+          <button type="button" onclick="guardarEdicionGasto()" class="w-1/2 bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-xl shadow-lg">Guardar</button>
+        </div>
+        <button type="button" onclick="eliminarGasto()" class="w-full bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 font-bold py-2.5 rounded-xl transition-all text-xs flex items-center justify-center gap-2">
+          <i class="fa-solid fa-trash-can"></i> Eliminar Registro de Gasto
+        </button>
       </div>
     </div>
   </div>
@@ -1074,7 +1094,6 @@
         if (ventasPeriodo.length === 0) {
           contenido.innerHTML = '<p class="py-6 text-center text-slate-500">No hay mercadería vendida en esta fecha.</p>';
         } else {
-          // Agrupar bultos por producto
           const agrupado = {};
           ventasPeriodo.forEach(v => {
             const pName = v.producto_nombre;
@@ -1231,7 +1250,7 @@
       });
     }
 
-    // 7. GUARDAR VENTA & CARGAR HISTORIAL DE VENTAS
+    // 7. GUARDAR VENTA, CARGAR HISTORIAL Y ELIMINACIÓN
     async function guardarVenta() {
       const fechaVenta = document.getElementById('input-venta-fecha').value || obtenerFechaLocalISO(new Date());
       let clienteNombre = document.getElementById('select-cliente').value;
@@ -1341,7 +1360,7 @@
       });
     }
 
-    // MODAL EDICIÓN VENTA
+    // MODAL EDICIÓN Y ELIMINACIÓN DE VENTA
     function abrirModalEditarVenta(id) {
       const v = ventasGlobales.find(item => item.id === id);
       if (!v) return;
@@ -1416,7 +1435,42 @@
       cargarTodo();
     }
 
-    // 8. GUARDAR Y CARGAR COMPRAS
+    async function eliminarVenta() {
+      const id = document.getElementById('edit-venta-id').value;
+      const v = ventasGlobales.find(item => item.id == id);
+      if (!v) return;
+
+      if (!confirm(`¿Confirmás que querés eliminar la venta de ${v.cliente_nombre}? Se reintegrarán ${v.cantidad_packs} bultos al stock disponible.`)) {
+        return;
+      }
+
+      // 1. Devolver el stock vendido
+      const prod = productosGlobales.find(p => p.nombre === v.producto_nombre);
+      if (prod) {
+        await db.from('productos').update({
+          stock_packs: prod.stock_packs + Number(v.cantidad_packs || 0)
+        }).eq('id', prod.id);
+      }
+
+      // 2. Si era a cuenta corriente, descontar la deuda del cliente
+      if (v.metodo_pago === 'cuenta_corriente') {
+        const cli = clientesGlobales.find(c => c.nombre === v.cliente_nombre);
+        if (cli && cli.saldo_deuda) {
+          const nuevoSaldo = Math.max(0, Number(cli.saldo_deuda) - Number(v.monto_total || 0));
+          await db.from('clientes').update({ saldo_deuda: nuevoSaldo }).eq('id', cli.id);
+        }
+      }
+
+      // 3. Eliminar de Supabase
+      const { error } = await db.from('ventas').delete().eq('id', id);
+      if (error) return alert('Error al eliminar venta: ' + error.message);
+
+      cerrarModalEditarVenta();
+      mostrarNotificacion('¡Venta eliminada y bultos devueltos al stock!');
+      cargarTodo();
+    }
+
+    // 8. GUARDAR Y CARGAR COMPRAS Y ELIMINACIÓN
     async function guardarCompra() {
       const fechaCompra = document.getElementById('input-compra-fecha').value || obtenerFechaLocalISO(new Date());
       let productoId = document.getElementById('select-compra-producto').value;
@@ -1529,7 +1583,7 @@
       });
     }
 
-    // MODAL EDICIÓN COMPRA
+    // MODAL EDICIÓN Y ELIMINACIÓN DE COMPRA
     function abrirModalEditarCompra(id) {
       const c = comprasGlobales.find(item => item.id === id);
       if (!c) return;
@@ -1594,7 +1648,34 @@
       cargarTodo();
     }
 
-    // 9. GASTOS (CON CATEGORÍAS PERSONALIZADAS Y EDICIÓN)
+    async function eliminarCompra() {
+      const id = document.getElementById('edit-compra-id').value;
+      const c = comprasGlobales.find(item => item.id == id);
+      if (!c) return;
+
+      if (!confirm(`¿Confirmás que querés eliminar esta compra de ${c.producto_nombre}? Se restarán ${c.cantidad_packs} bultos del stock actual.`)) {
+        return;
+      }
+
+      // 1. Restar el stock que se había sumado
+      const prod = productosGlobales.find(p => p.nombre === c.producto_nombre);
+      if (prod) {
+        const nuevoStock = Math.max(0, prod.stock_packs - Number(c.cantidad_packs || 0));
+        await db.from('productos').update({
+          stock_packs: nuevoStock
+        }).eq('id', prod.id);
+      }
+
+      // 2. Eliminar de Supabase
+      const { error } = await db.from('compras').delete().eq('id', id);
+      if (error) return alert('Error al eliminar compra: ' + error.message);
+
+      cerrarModalEditarCompra();
+      mostrarNotificacion('¡Compra eliminada y stock corregido!');
+      cargarTodo();
+    }
+
+    // 9. GASTOS (CON CATEGORÍAS PERSONALIZADAS, EDICIÓN Y ELIMINACIÓN)
     function actualizarSelectCategoriasGasto() {
       const select = document.getElementById('select-gasto-categoria');
       const baseCats = {
@@ -1711,7 +1792,7 @@
       });
     }
 
-    // MODAL EDICIÓN GASTO
+    // MODAL EDICIÓN Y ELIMINACIÓN DE GASTO
     function abrirModalEditarGasto(id) {
       const g = gastosGlobales.find(item => item.id === id);
       if (!g) return;
@@ -1774,7 +1855,24 @@
       cargarTodo();
     }
 
-    // 10. CLIENTES (ALTA, CARGA Y EDICIÓN)
+    async function eliminarGasto() {
+      const id = document.getElementById('edit-gasto-id').value;
+      const g = gastosGlobales.find(item => item.id == id);
+      if (!g) return;
+
+      if (!confirm(`¿Confirmás que querés eliminar este gasto de $${Number(g.monto).toLocaleString()} (${g.categoria})?`)) {
+        return;
+      }
+
+      const { error } = await db.from('gastos').delete().eq('id', id);
+      if (error) return alert('Error al eliminar gasto: ' + error.message);
+
+      cerrarModalEditarGasto();
+      mostrarNotificacion('¡Gasto eliminado correctamente!');
+      cargarTodo();
+    }
+
+    // 10. CLIENTES (ALTA, CARGA, EDICIÓN Y ELIMINACIÓN)
     async function guardarClienteDirectorio() {
       const nombre = document.getElementById('input-cliente-nombre').value.trim();
       const direccion = document.getElementById('input-cliente-direccion').value.trim();
@@ -1854,7 +1952,7 @@
       document.getElementById('metric-por-cobrar').textContent = `$ ${totalDeuda.toLocaleString()}`;
     }
 
-    // MODAL EDICIÓN CLIENTE
+    // MODAL EDICIÓN Y ELIMINACIÓN DE CLIENTE
     function abrirModalEditar(clienteId) {
       const c = clientesGlobales.find(item => item.id === clienteId);
       if (!c) return;
@@ -1898,6 +1996,23 @@
 
       cerrarModalEditar();
       mostrarNotificacion('¡Cliente actualizado con éxito!');
+      cargarTodo();
+    }
+
+    async function eliminarCliente() {
+      const id = document.getElementById('edit-cliente-id').value;
+      const c = clientesGlobales.find(item => item.id == id);
+      if (!c) return;
+
+      if (!confirm(`¿Confirmás que querés eliminar al cliente "${c.nombre}"?`)) {
+        return;
+      }
+
+      const { error } = await db.from('clientes').delete().eq('id', id);
+      if (error) return alert('Error al eliminar cliente: ' + error.message);
+
+      cerrarModalEditar();
+      mostrarNotificacion('¡Cliente eliminado correctamente!');
       cargarTodo();
     }
 
