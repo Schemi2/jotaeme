@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- SheetJS para exportar a Excel real (.xlsx) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
     .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.08); }
@@ -25,7 +27,7 @@
 </head>
 <body class="pb-24">
 
-  <!-- Header App -->
+  <!-- Header App con Botón Backup Excel -->
   <header class="p-4 border-b border-slate-800 flex justify-between items-center sticky top-0 bg-slate-900/90 backdrop-blur z-50">
     <div>
       <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
@@ -33,8 +35,14 @@
       </h1>
       <p class="text-xs text-slate-400">Control de Ventas y Stock</p>
     </div>
-    <div class="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full text-xs font-semibold border border-blue-500/20">
-      <i class="fa-solid fa-truck-fast mr-1"></i> En Calle
+    <div class="flex items-center gap-2">
+      <!-- Botón de Descarga Excel -->
+      <button onclick="exportarExcel()" title="Descargar backup en Excel" class="bg-emerald-500/10 hover:bg-emerald-500/20 active:scale-95 text-emerald-400 px-2.5 py-1 rounded-full text-xs font-semibold border border-emerald-500/30 flex items-center transition-all">
+        <i class="fa-solid fa-file-excel mr-1 text-sm"></i> Excel
+      </button>
+      <div class="bg-blue-500/10 text-blue-400 px-2.5 py-1 rounded-full text-xs font-semibold border border-blue-500/20 flex items-center">
+        <i class="fa-solid fa-truck-fast mr-1"></i> En Calle
+      </div>
     </div>
   </header>
 
@@ -364,7 +372,7 @@
 
     </div>
 
-    <!-- PESTAÑA 4: GASTOS OPERATIVOS (CON CATEGORÍAS PERSONALIZADAS) -->
+    <!-- PESTAÑA 4: GASTOS OPERATIVOS -->
     <div id="tab-gastos" class="tab-content space-y-6">
       
       <section class="glass-card p-4 rounded-2xl border border-amber-500/30">
@@ -510,9 +518,7 @@
         <button onclick="cerrarModalDetalle()" class="text-slate-400 hover:text-white text-lg p-1">✕</button>
       </div>
 
-      <div id="modal-detalle-contenido" class="overflow-y-auto space-y-2 text-xs divide-y divide-slate-800/60 pr-1 flex-1">
-        <!-- Relleno dinámico -->
-      </div>
+      <div id="modal-detalle-contenido" class="overflow-y-auto space-y-2 text-xs divide-y divide-slate-800/60 pr-1 flex-1"></div>
 
       <div class="pt-2 border-t border-slate-800">
         <button type="button" onclick="cerrarModalDetalle()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 rounded-xl">
@@ -812,6 +818,86 @@
       }, 2500);
     }
 
+    // 2. FUNCIÓN DE EXPORTACIÓN A EXCEL (.XLSX MULTI-HOJA)
+    async function exportarExcel() {
+      mostrarNotificacion('Generando backup en Excel...');
+
+      try {
+        const [resVentas, resCompras, resGastos, resClientes, resProd] = await Promise.all([
+          db.from('ventas').select('*'),
+          db.from('compras').select('*'),
+          db.from('gastos').select('*'),
+          db.from('clientes').select('*'),
+          db.from('productos').select('*')
+        ]);
+
+        const wb = XLSX.utils.book_new();
+
+        // Hoja 1: Ventas
+        const dataVentas = (resVentas.data || []).map(v => ({
+          'Fecha': v.fecha || (v.created_at ? v.created_at.split('T')[0] : ''),
+          'Cliente': v.cliente_nombre || '',
+          'Producto': v.producto_nombre || '',
+          'Bultos': Number(v.cantidad_packs || 0),
+          'Total Venta ($)': Number(v.monto_total || 0),
+          'Forma de Pago': v.metodo_pago || ''
+        }));
+        const wsVentas = XLSX.utils.json_to_sheet(dataVentas);
+        XLSX.utils.book_append_sheet(wb, wsVentas, 'Ventas');
+
+        // Hoja 2: Stock y Catálogo
+        const dataProd = (resProd.data || []).map(p => ({
+          'Producto': p.nombre || '',
+          'Stock Actual (Bultos)': Number(p.stock_packs || 0),
+          'Bultos x Pallet': Number(p.packs_por_pallet || 100),
+          'Pallets Aprox.': Number(((p.stock_packs || 0) / (p.packs_por_pallet || 100)).toFixed(1)),
+          'Costo x Bulto ($)': Number(p.precio_costo_pack || 0),
+          'Valor Total en Stock ($)': Number((p.stock_packs || 0) * (p.precio_costo_pack || 0))
+        }));
+        const wsProd = XLSX.utils.json_to_sheet(dataProd);
+        XLSX.utils.book_append_sheet(wb, wsProd, 'Stock');
+
+        // Hoja 3: Compras
+        const dataCompras = (resCompras.data || []).map(c => ({
+          'Fecha': c.fecha || (c.created_at ? c.created_at.split('T')[0] : ''),
+          'Producto': c.producto_nombre || '',
+          'Bultos Comprados': Number(c.cantidad_packs || 0),
+          'Costo Total ($)': Number(c.costo_total || 0),
+          'Costo x Bulto ($)': c.cantidad_packs > 0 ? Number((c.costo_total / c.cantidad_packs).toFixed(2)) : 0
+        }));
+        const wsCompras = XLSX.utils.json_to_sheet(dataCompras);
+        XLSX.utils.book_append_sheet(wb, wsCompras, 'Compras');
+
+        // Hoja 4: Gastos
+        const dataGastos = (resGastos.data || []).map(g => ({
+          'Fecha': g.fecha || (g.created_at ? g.created_at.split('T')[0] : ''),
+          'Tipo / Categoría': g.categoria || '',
+          'Detalle / Notas': g.descripcion || '',
+          'Monto ($)': Number(g.monto || 0)
+        }));
+        const wsGastos = XLSX.utils.json_to_sheet(dataGastos);
+        XLSX.utils.book_append_sheet(wb, wsGastos, 'Gastos');
+
+        // Hoja 5: Clientes
+        const dataClientes = (resClientes.data || []).map(cli => ({
+          'Nombre': cli.nombre || '',
+          'Dirección': cli.direccion || '',
+          'Localidad': cli.localidad || '',
+          'Teléfono': cli.telefono || '',
+          'Saldo Deuda Cta Cte ($)': Number(cli.saldo_deuda || 0)
+        }));
+        const wsClientes = XLSX.utils.json_to_sheet(dataClientes);
+        XLSX.utils.book_append_sheet(wb, wsClientes, 'Clientes');
+
+        const fechaHoy = obtenerFechaLocalISO(new Date());
+        XLSX.writeFile(wb, `Backup_Distribuidora_${fechaHoy}.xlsx`);
+        mostrarNotificacion('¡Backup Excel descargado con éxito!');
+      } catch (err) {
+        console.error('Error al exportar Excel:', err);
+        alert('Ocurrió un error al generar el backup: ' + err.message);
+      }
+    }
+
     async function cargarTodo() {
       await cargarProductos();
       await cargarHistorialVentas();
@@ -822,7 +908,7 @@
       calcularMetricasFinancieras();
     }
 
-    // 2. CAMBIO DE PESTAÑAS
+    // 3. CAMBIO DE PESTAÑAS
     function cambiarTab(tabName, btn) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.nav-btn').forEach(el => {
@@ -862,7 +948,7 @@
       }
     }
 
-    // 3. NAVEGADOR DE TIEMPO
+    // 4. NAVEGADOR DE TIEMPO
     function cambiarModoTiempo(modo, btn) {
       modoTiempo = modo;
       document.querySelectorAll('.modo-tiempo-btn').forEach(b => {
@@ -961,7 +1047,7 @@
       }
     }
 
-    // 4. MOTOR DE CÁLCULO FINANCIERO
+    // 5. MOTOR DE CÁLCULO FINANCIERO
     function calcularMetricasFinancieras() {
       const ventasPeriodo = ventasGlobales.filter(v => coincidePeriodoActual(v.fecha || v.created_at));
 
@@ -1008,7 +1094,7 @@
       document.getElementById('metric-gastos-totales').textContent = `$ ${Math.round(gastosTotales).toLocaleString()}`;
     }
 
-    // 5. MODAL DETALLE / EXPLICACIÓN DE CÁLCULO (DRILL-DOWN)
+    // 6. MODAL DETALLE / DRILL-DOWN
     function abrirDetalleFinanciero(tipo) {
       const titulo = document.getElementById('modal-detalle-titulo');
       const subtitulo = document.getElementById('modal-detalle-subtitulo');
@@ -1036,16 +1122,16 @@
 
       if (tipo === 'neta') {
         titulo.innerHTML = `<i class="fa-solid fa-wallet text-emerald-400"></i> Balance de Ganancia Neta`;
-        subtitulo.textContent = 'Cálculo paso a paso de la plata que te queda libre en el bolsillo';
+        subtitulo.textContent = 'Cálculo paso a paso de la plata libre';
 
         contenido.innerHTML = `
           <div class="space-y-2 py-2">
             <div class="flex justify-between items-center p-2 rounded-lg bg-slate-800/60">
-              <span class="text-slate-300 font-medium">(+) Facturación Total Cobrada</span>
+              <span class="text-slate-300 font-medium">(+) Facturación Total</span>
               <span class="font-bold text-slate-100">$ ${totalVentas.toLocaleString()}</span>
             </div>
             <div class="flex justify-between items-center p-2 rounded-lg bg-slate-800/60">
-              <span class="text-slate-300 font-medium">(-) Costo Reposición Stock (CMV)</span>
+              <span class="text-slate-300 font-medium">(-) Costo Reposición Stock</span>
               <span class="font-bold text-rose-400">- $ ${totalCosto.toLocaleString()}</span>
             </div>
             <div class="flex justify-between items-center p-2 rounded-lg bg-slate-800/90 border border-slate-700">
@@ -1053,7 +1139,7 @@
               <span class="font-bold text-teal-300">$ ${gananciaBruta.toLocaleString()}</span>
             </div>
             <div class="flex justify-between items-center p-2 rounded-lg bg-slate-800/60">
-              <span class="text-slate-300 font-medium">(-) Gastos Operativos (Flete, etc.)</span>
+              <span class="text-slate-300 font-medium">(-) Gastos Operativos</span>
               <span class="font-bold text-amber-400">- $ ${totalGastos.toLocaleString()}</span>
             </div>
             <div class="flex justify-between items-center p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 mt-3">
@@ -1067,7 +1153,7 @@
         `;
       } else if (tipo === 'ventas') {
         titulo.innerHTML = `<i class="fa-solid fa-arrow-trend-up text-blue-400"></i> Detalle de Facturación`;
-        subtitulo.textContent = `${ventasPeriodo.length} venta(s) realizadas en este período`;
+        subtitulo.textContent = `${ventasPeriodo.length} venta(s) realizadas`;
 
         if (ventasPeriodo.length === 0) {
           contenido.innerHTML = '<p class="py-6 text-center text-slate-500">No hay ventas registradas en esta fecha.</p>';
@@ -1088,8 +1174,8 @@
           });
         }
       } else if (tipo === 'costo') {
-        titulo.innerHTML = `<i class="fa-solid fa-boxes-packing text-indigo-400"></i> Detalle de Costo de Mercadería`;
-        subtitulo.textContent = 'Cuánto te cuesta reponer los bultos entregados';
+        titulo.innerHTML = `<i class="fa-solid fa-boxes-packing text-indigo-400"></i> Costo de Mercadería Vendida`;
+        subtitulo.textContent = 'Costo de reposición de los bultos entregados';
 
         if (ventasPeriodo.length === 0) {
           contenido.innerHTML = '<p class="py-6 text-center text-slate-500">No hay mercadería vendida en esta fecha.</p>';
@@ -1119,7 +1205,7 @@
         }
       } else if (tipo === 'bruta') {
         titulo.innerHTML = `<i class="fa-solid fa-chart-pie text-teal-400"></i> Ganancia Bruta por Producto`;
-        subtitulo.textContent = 'Diferencia comercial (Venta menos costo de compra)';
+        subtitulo.textContent = 'Venta menos costo de reposición';
 
         if (ventasPeriodo.length === 0) {
           contenido.innerHTML = '<p class="py-6 text-center text-slate-500">Sin operaciones en esta fecha.</p>';
@@ -1150,7 +1236,7 @@
           }
         }
       } else if (tipo === 'gastos') {
-        titulo.innerHTML = `<i class="fa-solid fa-gas-pump text-amber-400"></i> Detalle de Gastos del Período`;
+        titulo.innerHTML = `<i class="fa-solid fa-gas-pump text-amber-400"></i> Detalle de Gastos`;
         subtitulo.textContent = `${gastosPeriodo.length} gasto(s) registrados`;
 
         if (gastosPeriodo.length === 0) {
@@ -1170,11 +1256,11 @@
         }
       } else if (tipo === 'deudas') {
         titulo.innerHTML = `<i class="fa-solid fa-receipt text-amber-400"></i> Cuentas Corrientes Pendientes`;
-        subtitulo.textContent = 'Clientes con saldo adeudado en la calle';
+        subtitulo.textContent = 'Clientes con saldo pendiente';
 
         const deudores = clientesGlobales.filter(c => Number(c.saldo_deuda || 0) > 0);
         if (deudores.length === 0) {
-          contenido.innerHTML = '<p class="py-6 text-center text-slate-500">¡Al día! No tenés fiados pendientes de cobro.</p>';
+          contenido.innerHTML = '<p class="py-6 text-center text-slate-500">¡Al día! No tenés deudas pendientes de cobro.</p>';
         } else {
           deudores.forEach(d => {
             contenido.innerHTML += `
@@ -1202,7 +1288,7 @@
       document.getElementById('modal-detalle-financiero').classList.add('hidden');
     }
 
-    // 6. LEER PRODUCTOS
+    // 7. LEER PRODUCTOS
     async function cargarProductos() {
       const { data: productos, error } = await db.from('productos').select('*');
       if (error) console.error('Error al cargar productos:', error);
@@ -1250,7 +1336,7 @@
       });
     }
 
-    // 7. GUARDAR VENTA, CARGAR HISTORIAL Y ELIMINACIÓN
+    // 8. GUARDAR VENTA, CARGAR HISTORIAL Y ELIMINACIÓN
     async function guardarVenta() {
       const fechaVenta = document.getElementById('input-venta-fecha').value || obtenerFechaLocalISO(new Date());
       let clienteNombre = document.getElementById('select-cliente').value;
@@ -1444,7 +1530,7 @@
         return;
       }
 
-      // 1. Devolver el stock vendido
+      // Devolver stock vendido
       const prod = productosGlobales.find(p => p.nombre === v.producto_nombre);
       if (prod) {
         await db.from('productos').update({
@@ -1452,7 +1538,7 @@
         }).eq('id', prod.id);
       }
 
-      // 2. Si era a cuenta corriente, descontar la deuda del cliente
+      // Si era fiado, descontar la deuda del cliente
       if (v.metodo_pago === 'cuenta_corriente') {
         const cli = clientesGlobales.find(c => c.nombre === v.cliente_nombre);
         if (cli && cli.saldo_deuda) {
@@ -1461,7 +1547,6 @@
         }
       }
 
-      // 3. Eliminar de Supabase
       const { error } = await db.from('ventas').delete().eq('id', id);
       if (error) return alert('Error al eliminar venta: ' + error.message);
 
@@ -1470,7 +1555,7 @@
       cargarTodo();
     }
 
-    // 8. GUARDAR Y CARGAR COMPRAS Y ELIMINACIÓN
+    // 9. GUARDAR Y CARGAR COMPRAS Y ELIMINACIÓN
     async function guardarCompra() {
       const fechaCompra = document.getElementById('input-compra-fecha').value || obtenerFechaLocalISO(new Date());
       let productoId = document.getElementById('select-compra-producto').value;
@@ -1657,16 +1742,12 @@
         return;
       }
 
-      // 1. Restar el stock que se había sumado
       const prod = productosGlobales.find(p => p.nombre === c.producto_nombre);
       if (prod) {
         const nuevoStock = Math.max(0, prod.stock_packs - Number(c.cantidad_packs || 0));
-        await db.from('productos').update({
-          stock_packs: nuevoStock
-        }).eq('id', prod.id);
+        await db.from('productos').update({ stock_packs: nuevoStock }).eq('id', prod.id);
       }
 
-      // 2. Eliminar de Supabase
       const { error } = await db.from('compras').delete().eq('id', id);
       if (error) return alert('Error al eliminar compra: ' + error.message);
 
@@ -1675,7 +1756,7 @@
       cargarTodo();
     }
 
-    // 9. GASTOS (CON CATEGORÍAS PERSONALIZADAS, EDICIÓN Y ELIMINACIÓN)
+    // 10. GASTOS (CATEGORÍAS DINÁMICAS, EDICIÓN Y ELIMINACIÓN)
     function actualizarSelectCategoriasGasto() {
       const select = document.getElementById('select-gasto-categoria');
       const baseCats = {
@@ -1872,7 +1953,7 @@
       cargarTodo();
     }
 
-    // 10. CLIENTES (ALTA, CARGA, EDICIÓN Y ELIMINACIÓN)
+    // 11. CLIENTES (ALTA, CARGA, EDICIÓN Y ELIMINACIÓN)
     async function guardarClienteDirectorio() {
       const nombre = document.getElementById('input-cliente-nombre').value.trim();
       const direccion = document.getElementById('input-cliente-direccion').value.trim();
