@@ -40,16 +40,19 @@
 
   <main class="p-4 max-w-lg mx-auto">
 
-    <!-- PESTAÑA 1: INICIO (TABLERO FINANCIERO Y CONTROL DE GANANCIAS) -->
+    <!-- PESTAÑA 1: INICIO (TABLERO FINANCIERO CON NAVEGACIÓN TEMPORAL) -->
     <div id="tab-inicio" class="tab-content active space-y-4">
       
-      <!-- Selector de Modo: Día / Mes / Todo -->
+      <!-- Selector de Modo: Día / Semana / Mes / Todo -->
       <section class="flex bg-slate-900/90 p-1 rounded-xl border border-slate-800">
         <button onclick="cambiarModoTiempo('dia', this)" class="modo-tiempo-btn active flex-1 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white transition-all">
-          Por Día
+          Día
+        </button>
+        <button onclick="cambiarModoTiempo('semana', this)" class="modo-tiempo-btn flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition-all">
+          Semana
         </button>
         <button onclick="cambiarModoTiempo('mes', this)" class="modo-tiempo-btn flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition-all">
-          Por Mes
+          Mes
         </button>
         <button onclick="cambiarModoTiempo('todo', this)" class="modo-tiempo-btn flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition-all">
           Histórico
@@ -342,7 +345,7 @@
 
     </div>
 
-    <!-- PESTAÑA 4: GASTOS OPERATIVOS -->
+    <!-- PESTAÑA 4: GASTOS OPERATIVOS (CON CATEGORÍAS PERSONALIZADAS) -->
     <div id="tab-gastos" class="tab-content space-y-6">
       
       <section class="glass-card p-4 rounded-2xl border border-amber-500/30">
@@ -357,13 +360,20 @@
 
           <div>
             <label class="block text-xs text-slate-400 mb-1">Tipo de Gasto</label>
-            <select id="select-gasto-categoria" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none">
+            <select id="select-gasto-categoria" onchange="toggleNuevoGastoCategoria(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none">
+              <!-- Se actualiza dinámicamente con las categorías guardadas -->
               <option value="nafta">⛽ Combustible / Nafta</option>
               <option value="peaje">🛣️ Peaje / Estacionamiento</option>
               <option value="vehiculo">🔧 Mantenimiento Camioneta</option>
               <option value="comida">🥪 Almuerzo / Comida</option>
-              <option value="otros">📦 Otros Gastos</option>
+              <option value="__NUEVO__" class="text-amber-400 font-bold">+ Crear Nuevo Tipo de Gasto</option>
             </select>
+          </div>
+
+          <!-- Campo dinámico para nuevo tipo de gasto -->
+          <div id="campo-nuevo-gasto-categoria" class="hidden">
+            <label class="block text-xs text-amber-400 mb-1 font-medium">Nombre del Nuevo Tipo de Gasto</label>
+            <input type="text" id="input-nuevo-gasto-categoria" placeholder="Ej: Seguro, Publicidad, Insumos" class="w-full bg-slate-800 border border-amber-500/50 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
           </div>
 
           <div>
@@ -619,13 +629,7 @@
         </div>
         <div>
           <label class="block text-xs text-slate-400 mb-1">Tipo de Gasto</label>
-          <select id="edit-gasto-categoria" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none">
-            <option value="nafta">⛽ Combustible / Nafta</option>
-            <option value="peaje">🛣️ Peaje / Estacionamiento</option>
-            <option value="vehiculo">🔧 Mantenimiento Camioneta</option>
-            <option value="comida">🥪 Almuerzo / Comida</option>
-            <option value="otros">📦 Otros Gastos</option>
-          </select>
+          <select id="edit-gasto-categoria" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none"></select>
         </div>
         <div>
           <label class="block text-xs text-slate-400 mb-1">Monto ($)</label>
@@ -680,8 +684,8 @@
     let gastosGlobales = [];
 
     // ESTADO DEL NAVEGADOR TEMPORAL
-    let modoTiempo = 'dia'; // 'dia', 'mes', 'todo'
-    let cursorFecha = new Date(); // Fecha actual de navegación
+    let modoTiempo = 'dia'; // 'dia', 'semana', 'mes', 'todo'
+    let cursorFecha = new Date(); // Fecha de navegación
 
     document.addEventListener('DOMContentLoaded', () => {
       const hoy = obtenerFechaLocalISO(new Date());
@@ -706,6 +710,21 @@
       return `${year}-${month}`;
     }
 
+    // Devuelve el rango Lunes a Domingo de la semana de la fecha dada
+    function obtenerRangoSemana(d) {
+      const curr = new Date(d);
+      const day = curr.getDay(); // 0 es Domingo, 1 es Lunes...
+      const diffToMon = curr.getDate() - day + (day === 0 ? -6 : 1);
+      const inicioSemana = new Date(curr.getFullYear(), curr.getMonth(), diffToMon);
+      const finSemana = new Date(inicioSemana.getFullYear(), inicioSemana.getMonth(), inicioSemana.getDate() + 6);
+      return {
+        inicio: obtenerFechaLocalISO(inicioSemana),
+        fin: obtenerFechaLocalISO(finSemana),
+        inicioD: inicioSemana,
+        finD: finSemana
+      };
+    }
+
     // SISTEMA DE NOTIFICACIÓN FLOTANTE
     function mostrarNotificacion(mensaje) {
       const toast = document.createElement('div');
@@ -726,6 +745,7 @@
       await cargarHistorialCompras();
       await cargarHistorialGastos();
       await cargarClientes();
+      actualizarSelectCategoriasGasto();
       calcularMetricasFinancieras();
     }
 
@@ -760,7 +780,16 @@
       }
     }
 
-    // 3. NAVEGADOR DE TIEMPO (DÍA A DÍA / MES A MES)
+    function toggleNuevoGastoCategoria(val) {
+      const campo = document.getElementById('campo-nuevo-gasto-categoria');
+      if (val === '__NUEVO__') {
+        campo.classList.remove('hidden');
+      } else {
+        campo.classList.add('hidden');
+      }
+    }
+
+    // 3. NAVEGADOR DE TIEMPO (DÍA / SEMANA / MES / HISTÓRICO)
     function cambiarModoTiempo(modo, btn) {
       modoTiempo = modo;
       document.querySelectorAll('.modo-tiempo-btn').forEach(b => {
@@ -784,6 +813,8 @@
     function moverTiempo(delta) {
       if (modoTiempo === 'dia') {
         cursorFecha.setDate(cursorFecha.getDate() + delta);
+      } else if (modoTiempo === 'semana') {
+        cursorFecha.setDate(cursorFecha.getDate() + (delta * 7));
       } else if (modoTiempo === 'mes') {
         cursorFecha.setMonth(cursorFecha.getMonth() + delta);
       }
@@ -823,6 +854,22 @@
           contenedor.innerHTML = `<i class="fa-regular fa-calendar text-blue-400 text-xs"></i> <span>${texto}</span>`;
           subEtiqueta.textContent = 'Fecha puntual';
         }
+      } else if (modoTiempo === 'semana') {
+        const rango = obtenerRangoSemana(cursorFecha);
+        const opc = { day: 'numeric', month: 'short' };
+        let tInicio = rango.inicioD.toLocaleDateString('es-AR', opc);
+        let tFin = rango.finD.toLocaleDateString('es-AR', opc);
+
+        const rangoHoy = obtenerRangoSemana(new Date());
+        const esEstaSemana = (rango.inicio === rangoHoy.inicio);
+
+        if (esEstaSemana) {
+          contenedor.innerHTML = `<i class="fa-solid fa-calendar-week text-emerald-400 text-xs"></i> <span>Esta Semana (${tInicio} - ${tFin})</span>`;
+          subEtiqueta.textContent = 'Semana en curso';
+        } else {
+          contenedor.innerHTML = `<i class="fa-solid fa-calendar-week text-blue-400 text-xs"></i> <span>${tInicio} - ${tFin}</span>`;
+          subEtiqueta.textContent = 'Semana seleccionada';
+        }
       } else if (modoTiempo === 'mes') {
         const mesOpciones = { month: 'long', year: 'numeric' };
         let textoMes = cursorFecha.toLocaleDateString('es-AR', mesOpciones);
@@ -844,6 +891,7 @@
     // 4. MOTOR DE CÁLCULO FINANCIERO FILTRADO POR EL NAVEGADOR
     function calcularMetricasFinancieras() {
       const fechaObjetivoDia = obtenerFechaLocalISO(cursorFecha);
+      const rangoSemana = obtenerRangoSemana(cursorFecha);
       const mesObjetivo = obtenerMesLocalISO(cursorFecha);
 
       function coincidePeriodo(fechaRegistro) {
@@ -851,15 +899,14 @@
         const f = fechaRegistro.includes('T') ? fechaRegistro.split('T')[0] : fechaRegistro;
 
         if (modoTiempo === 'dia') return f === fechaObjetivoDia;
+        if (modoTiempo === 'semana') return f >= rangoSemana.inicio && f <= rangoSemana.fin;
         if (modoTiempo === 'mes') return f.startsWith(mesObjetivo);
         if (modoTiempo === 'todo') return true;
         return true;
       }
 
-      // 1. Filtrar ventas
       const ventasPeriodo = ventasGlobales.filter(v => coincidePeriodo(v.fecha || v.created_at));
 
-      // 2. Mapear costos unitarios por producto
       const mapaCostos = {};
       productosGlobales.forEach(p => {
         mapaCostos[p.nombre] = Number(p.precio_costo_pack || 0);
@@ -879,15 +926,12 @@
         cantidadBultosVendidos += bultos;
       });
 
-      // 3. Filtrar gastos
       const gastosPeriodo = gastosGlobales.filter(g => coincidePeriodo(g.fecha || g.created_at));
       const gastosTotales = gastosPeriodo.reduce((acc, g) => acc + Number(g.monto || 0), 0);
 
-      // 4. Ganancia Bruta y Neta
       const gananciaBruta = ventasTotales - costoMercaderiaVendida;
       const gananciaNeta = gananciaBruta - gastosTotales;
 
-      // 5. Margen Neto %
       const margenNeto = ventasTotales > 0 ? ((gananciaNeta / ventasTotales) * 100).toFixed(1) : 0;
 
       document.getElementById('metric-ganancia-neta').textContent = `$ ${Math.round(gananciaNeta).toLocaleString()}`;
@@ -1317,12 +1361,50 @@
       cargarTodo();
     }
 
-    // 8. GASTOS (ALTA, CARGA Y EDICIÓN)
+    // 8. GASTOS (CON CATEGORÍAS PERSONALIZADAS Y EDICIÓN)
+    function actualizarSelectCategoriasGasto() {
+      const select = document.getElementById('select-gasto-categoria');
+      const baseCats = {
+        nafta: '⛽ Combustible / Nafta',
+        peaje: '🛣️ Peaje / Estacionamiento',
+        vehiculo: '🔧 Mantenimiento Camioneta',
+        comida: '🥪 Almuerzo / Comida'
+      };
+
+      const customCats = new Set();
+      gastosGlobales.forEach(g => {
+        if (g.categoria && !baseCats[g.categoria]) {
+          customCats.add(g.categoria);
+        }
+      });
+
+      let html = '';
+      for (const [key, label] of Object.entries(baseCats)) {
+        html += `<option value="${key}">${label}</option>`;
+      }
+      customCats.forEach(cat => {
+        html += `<option value="${cat}">📁 ${cat}</option>`;
+      });
+      html += `<option value="__NUEVO__" class="text-amber-400 font-bold">+ Crear Nuevo Tipo de Gasto</option>`;
+
+      const valorPrevio = select.value;
+      select.innerHTML = html;
+      if (valorPrevio && select.querySelector(`option[value="${valorPrevio}"]`)) {
+        select.value = valorPrevio;
+      }
+    }
+
     async function guardarGasto() {
       const fechaGasto = document.getElementById('input-gasto-fecha').value || obtenerFechaLocalISO(new Date());
-      const categoria = document.getElementById('select-gasto-categoria').value;
+      let categoria = document.getElementById('select-gasto-categoria').value;
+      const nuevaCat = document.getElementById('input-nuevo-gasto-categoria').value.trim();
       const monto = Number(document.getElementById('input-gasto-monto').value || 0);
       const descripcion = document.getElementById('input-gasto-descripcion').value.trim();
+
+      if (categoria === '__NUEVO__') {
+        if (!nuevaCat) return alert('Por favor escribí el nombre del nuevo tipo de gasto.');
+        categoria = nuevaCat;
+      }
 
       if (monto <= 0) return alert('Ingresá un monto válido.');
 
@@ -1338,6 +1420,7 @@
       mostrarNotificacion('¡Gasto registrado con éxito!');
       document.getElementById('form-gasto').reset();
       document.getElementById('input-gasto-fecha').value = obtenerFechaLocalISO(new Date());
+      document.getElementById('campo-nuevo-gasto-categoria').classList.add('hidden');
       cargarTodo();
     }
 
@@ -1365,8 +1448,7 @@
         nafta: '⛽ Nafta',
         peaje: '🛣️ Peaje',
         vehiculo: '🔧 Vehículo',
-        comida: '🥪 Comida',
-        otros: '📦 Otros'
+        comida: '🥪 Comida'
       };
 
       gastos.forEach(g => {
@@ -1377,7 +1459,7 @@
           fechaFmt = new Date(g.created_at).toLocaleDateString('es-AR');
         }
 
-        const catText = categoriaEtiquetas[g.categoria] || g.categoria || 'Gasto';
+        const catText = categoriaEtiquetas[g.categoria] || `📁 ${g.categoria}` || 'Gasto';
         const monto = Number(g.monto || 0);
 
         tbody.innerHTML += `
@@ -1405,7 +1487,25 @@
 
       let f = g.fecha ? (g.fecha.includes('T') ? g.fecha.split('T')[0] : g.fecha) : obtenerFechaLocalISO(new Date());
       document.getElementById('edit-gasto-fecha').value = f;
-      document.getElementById('edit-gasto-categoria').value = g.categoria || 'nafta';
+
+      const selCat = document.getElementById('edit-gasto-categoria');
+      const baseCats = {
+        nafta: '⛽ Combustible / Nafta',
+        peaje: '🛣️ Peaje / Estacionamiento',
+        vehiculo: '🔧 Mantenimiento Camioneta',
+        comida: '🥪 Almuerzo / Comida'
+      };
+
+      let opts = '';
+      for (const [key, label] of Object.entries(baseCats)) {
+        opts += `<option value="${key}">${label}</option>`;
+      }
+      if (g.categoria && !baseCats[g.categoria]) {
+        opts += `<option value="${g.categoria}">📁 ${g.categoria}</option>`;
+      }
+      selCat.innerHTML = opts;
+      selCat.value = g.categoria || 'nafta';
+
       document.getElementById('edit-gasto-monto').value = g.monto || 0;
       document.getElementById('edit-gasto-descripcion').value = g.descripcion || '';
 
